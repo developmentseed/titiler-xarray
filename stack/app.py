@@ -107,7 +107,7 @@ LambdaStack(
     timeout=settings.timeout,
     concurrent=settings.max_concurrent,
     permissions=perms,
-    env=settings.additional_env,
+    environment=settings.additional_env,
 )
 
 app.synth()

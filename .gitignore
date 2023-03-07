@@ -105,3 +105,4 @@ ENV/
 .mypy_cache/
 
 cdk.out/
+node_modules
