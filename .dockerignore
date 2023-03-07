@@ -1,0 +1,5 @@
+# Ignore cdk folder
+cdk.out
+.history
+.tox
+.git

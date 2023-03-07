@@ -1,0 +1,97 @@
+[project]
+name = "titiler.xarray"
+description = "TiTiler extension for xarray."
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+    {name = "Vincent Sarago", email = "vincent@developmentseed.com"},
+]
+license = {text = "MIT"}
+keywords = [
+    "TiTiler",
+    "zarr",
+    "xarray",
+    "Fastapi",
+]
+classifiers = [
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: GIS",
+]
+dynamic = ["version"]
+dependencies = [
+    "xarray",
+    "rioxarray",
+    "titiler.core>=0.11.1,<0.12",
+    "starlette-cramjam>=0.3,<0.4",
+    "python-dotenv",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-asyncio",
+    "httpx",
+]
+dev = [
+    "pre-commit"
+]
+
+[project.urls]
+Homepage = "https://github.com/developmentseed/titiler-xarray"
+Issues = "https://github.com/developmentseed/titiler-xarray/issues"
+Source = "https://github.com/developmentseed/titiler-xarray"
+
+[tool.coverage.run]
+branch = true
+parallel = true
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
+
+[tool.isort]
+profile = "black"
+known_first_party = ["titiler"]
+default_section = "THIRDPARTY"
+
+[tool.ruff]
+select = [
+    "D1",  # pydocstyle errors
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+]
+ignore = [
+    "E501",  # line too long, handled by black
+    "B008",  # do not perform function calls in argument defaults
+    "B905",  # ignore zip() without an explicit strict= parameter, only support with python >3.10
+]
+
+[tool.mypy]
+no_implicit_optional = true
+strict_optional = true
+namespace_packages = true
+explicit_package_bases = true
+
+[build-system]
+requires = ["pdm-pep517"]
+build-backend = "pdm.pep517.api"
+
+[tool.pdm.version]
+source = "file"
+path = "titiler/xarray/__init__.py"
+
+[tool.pdm.build]
+includes = ["titiler/xarray"]
+excludes = ["tests/", "**/.mypy_cache", "**/.DS_Store"]
