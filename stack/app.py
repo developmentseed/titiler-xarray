@@ -3,13 +3,14 @@
 import os
 from typing import Any, Dict, List, Optional
 
-from aws_cdk import aws_apigatewayv2 as apigw
-from aws_cdk import aws_apigatewayv2_integrations as apigw_integrations
+from aws_cdk import App, CfnOutput, Duration, Stack, Tag
+from aws_cdk import aws_apigatewayv2_alpha as apigw
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda
 from aws_cdk import aws_logs as logs
-from aws_cdk import core
+from aws_cdk.aws_apigatewayv2_integrations_alpha import HttpLambdaIntegration
 from config import StackSettings
+from constructs import Construct
 
 settings = StackSettings()
 
@@ -27,12 +28,12 @@ DEFAULT_ENV = {
 }
 
 
-class LambdaStack(core.Stack):
+class LambdaStack(Stack):
     """Lambda Stack"""
 
     def __init__(
         self,
-        scope: core.Construct,
+        scope: Construct,
         id: str,
         memory: int = 1024,
         timeout: int = 30,
@@ -55,12 +56,12 @@ class LambdaStack(core.Stack):
             runtime=runtime,
             code=aws_lambda.Code.from_docker_build(
                 path=os.path.abspath(code_dir),
-                file="lambda/Dockerfile",
+                file="stack/lambda/Dockerfile",
             ),
             handler="handler.handler",
             memory_size=memory,
             reserved_concurrent_executions=concurrent,
-            timeout=core.Duration.seconds(timeout),
+            timeout=Duration.seconds(timeout),
             environment={**DEFAULT_ENV, **environment},
             log_retention=logs.RetentionDays.ONE_WEEK,
         )
@@ -71,14 +72,14 @@ class LambdaStack(core.Stack):
         api = apigw.HttpApi(
             self,
             f"{id}-endpoint",
-            default_integration=apigw_integrations.HttpLambdaIntegration(
-                f"{id}-integration", handler=lambda_function
+            default_integration=HttpLambdaIntegration(
+                f"{id}-integration", lambda_function
             ),
         )
-        core.CfnOutput(self, "Endpoint", value=api.url)
+        CfnOutput(self, "Endpoint", value=api.url)
 
 
-app = core.App()
+app = App()
 
 perms = []
 if settings.buckets:
@@ -97,7 +98,7 @@ for key, value in {
     "Client": settings.client,
 }.items():
     if value:
-        core.Tag.add(app, key, value)
+        Tag(key, value)
 
 
 LambdaStack(
