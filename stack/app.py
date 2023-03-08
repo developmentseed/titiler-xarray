@@ -3,7 +3,7 @@
 import os
 from typing import Any, Dict, List, Optional
 
-from aws_cdk import App, CfnOutput, Duration, Stack, Tag
+from aws_cdk import App, CfnOutput, Duration, Stack, Tags
 from aws_cdk import aws_apigatewayv2_alpha as apigw
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda
@@ -90,18 +90,8 @@ if settings.buckets:
         )
     )
 
-# Tag infrastructure
-for key, value in {
-    "Project": settings.name,
-    "Stack": settings.stage,
-    "Owner": settings.owner,
-    "Client": settings.client,
-}.items():
-    if value:
-        Tag(key, value)
 
-
-LambdaStack(
+lambda_stack = LambdaStack(
     app,
     f"{settings.name}-{settings.stage}",
     memory=settings.memory,
@@ -110,5 +100,15 @@ LambdaStack(
     permissions=perms,
     environment=settings.additional_env,
 )
+# Tag infrastructure
+for key, value in {
+    "Project": settings.name,
+    "Stack": settings.stage,
+    "Owner": settings.owner,
+    "Client": settings.client,
+}.items():
+    if value:
+        Tags.of(lambda_stack).add(key, value)
+
 
 app.synth()
