@@ -267,8 +267,13 @@ class XarrayTilerFactory(BaseTilerFactory):
                 ds.rio.write_crs(crs, inplace=True)
 
                 with self.reader(ds, tms=tms) as src_dst:
+                    # see https://github.com/corteva/rioxarray/issues/645
+                    minx, miny, maxx, maxy = zip(
+                        [-180, -90, 180, 90], list(src_dst.geographic_bounds)
+                    )
+                    bounds = [max(minx), max(miny), min(maxx), min(maxy)]
                     return {
-                        "bounds": src_dst.geographic_bounds,
+                        "bounds": bounds,
                         "minzoom": minzoom if minzoom is not None else src_dst.minzoom,
                         "maxzoom": maxzoom if maxzoom is not None else src_dst.maxzoom,
                         "tiles": [tiles_url],
