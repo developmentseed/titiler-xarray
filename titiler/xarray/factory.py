@@ -130,12 +130,20 @@ class XarrayTilerFactory(BaseTilerFactory):
             ),
             colormap=Depends(self.colormap_dependency),
             render_params=Depends(self.render_dependency),
+            multiscale: Optional[bool] = Query(False, title="multiscale", description="Whether the dataset has multiscale groups")
         ) -> Response:
             """Create map tile from a dataset."""
             tms = self.supported_tms.get(TileMatrixSetId)
+            xr_open_args = {
+                'engine': 'zarr',
+                'decode_coords': 'all',
+                'consolidated': True
+            }
+            if multiscale:
+                xr_open_args['group'] = z
 
             with xarray.open_dataset(
-                src_path, engine="zarr", decode_coords="all"
+                src_path, **xr_open_args
             ) as src:
                 ds = src[variable]
                 if "time" in ds.dims:
