@@ -4,11 +4,16 @@
 
 ```bash
 # Install AWS CDK requirements
-# Create Virtual env
-$ python -m pip install --upgrade virtualenv
-$ virtualenv .venv
-$ python -m pip install -r requirements-dev.txt
-$ npm install
+
+# Create Virtual env and install python dependencies
+python -m pip install --upgrade virtualenv
+virtualenv .venv
+
+source .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+
+# Install node dependencies
+npm install
 
 # Create AWS env
 $ AWS_DEFAULT_REGION=us-west-2 AWS_REGION=us-west-2 npm run cdk -- bootstrap
