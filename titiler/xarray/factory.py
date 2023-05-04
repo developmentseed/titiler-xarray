@@ -1,6 +1,7 @@
 """TiTiler.xarray factory."""
 
 from dataclasses import dataclass
+import fsspec
 from typing import Dict, List, Literal, Optional, Tuple, Type
 from urllib.parse import urlencode
 
@@ -130,7 +131,9 @@ class XarrayTilerFactory(BaseTilerFactory):
             ),
             colormap=Depends(self.colormap_dependency),
             render_params=Depends(self.render_dependency),
-            multiscale: Optional[bool] = Query(False, title="multiscale", description="Whether the dataset has multiscale groups")
+             multiscale: Optional[bool] = Query(False, title="multiscale", description="Whether the dataset has multiscale groups"),
+            reference: Optional[bool] = Query(False, title="reference", description="Whether the src_path is a kerchunk reference"),
+            drop_dim: Optional[str] = Query(None, title="drop_dim", description="Dimension to drop and value to select (e.g. zlev=0)")
         ) -> Response:
             """Create map tile from a dataset."""
             tms = self.supported_tms.get(TileMatrixSetId)
@@ -142,9 +145,20 @@ class XarrayTilerFactory(BaseTilerFactory):
             if multiscale:
                 xr_open_args['group'] = z
 
+            if reference:
+                fs = fsspec.filesystem("reference", fo=src_path,
+                                    remote_protocol="s3", remote_options={"anon":True})
+                src_path = fs.get_mapper("")          
+                xr_open_args['backend_kwargs'] = {"consolidated":False}
+
             with xarray.open_dataset(
                 src_path, **xr_open_args
             ) as src:
+                if drop_dim:
+                    dim_to_drop, dim_val = drop_dim.split("=")
+                    src = src.sel({dim_to_drop: dim_val}).drop(dim_to_drop)
+                src = src.rename({'lat': 'y', 'lon': 'x'})
+
                 ds = src[variable]
                 if "time" in ds.dims:
                     time_slice = time_slice or 0
