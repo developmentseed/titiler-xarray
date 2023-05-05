@@ -26,6 +26,56 @@ class XarrayTilerFactory(BaseTilerFactory):
     # Default reader is set to rio_tiler.io.Reader
     reader: Type[BaseReader] = XarrayReader
 
+    def xarray_open_dataset(self,
+                            src_path: str,
+                            z: Optional[str] = None,
+                            multiscale: Optional[bool] = False,
+                            reference: Optional[bool] = False
+                            ) -> xarray.Dataset:
+        """Open dataset."""
+        xr_open_args = {
+            'engine': 'zarr',
+            'decode_coords': 'all',
+            'consolidated': True
+        }
+        if multiscale:
+            xr_open_args['group'] = z
+
+        if reference:
+            fs = fsspec.filesystem("reference", fo=src_path, remote_options={"anon":True})
+            src_path = fs.get_mapper("")
+            xr_open_args['backend_kwargs'] = {"consolidated":False}
+        return xarray.open_dataset(src_path, **xr_open_args)
+
+    def update_dataset(self,
+                       src: xarray.Dataset,
+                       variable: str,
+                       time_slice: Optional[int] = None,
+                       drop_dim: Optional[str] = None
+                       ) -> xarray.Dataset:
+        """Update dataset."""
+        src = src.rename({'lat': 'y', 'lon': 'x'})
+        if drop_dim:
+            dim_to_drop, dim_val = drop_dim.split("=")
+            src = src.sel({dim_to_drop: dim_val}).drop(dim_to_drop)
+        ds = src[variable]
+
+        if (ds.x > 180).any():
+            # Adjust the longitude coordinates to the -180 to 180 range
+            ds = ds.assign_coords(x=(ds.x + 180) % 360 - 180)
+
+            # Sort the dataset by the updated longitude coordinates
+            ds = ds.sortby(ds.x)
+        # Make sure we are a CRS
+        crs = ds.rio.crs or "epsg:4326"
+        ds.rio.write_crs(crs, inplace=True)
+
+        if "time" in ds.dims:
+            times = [str(x.data) for x in ds.time]
+            time_slice = time_slice or 0
+            ds = ds[time_slice : time_slice + 1]
+        return ds, times
+
     def register_routes(self) -> None:  # noqa: C901
         """Register Info / Tiles / TileJSON endoints."""
 
@@ -36,11 +86,11 @@ class XarrayTilerFactory(BaseTilerFactory):
         )
         def variable_endpoint(
             src_path: str = Depends(self.path_dependency),
+            reference: Optional[bool] = Query(False, title="reference", description="Whether the src_path is a kerchunk reference"),
         ) -> List[str]:
+
             """return available variables."""
-            with xarray.open_dataset(
-                src_path, engine="zarr", decode_coords="all"
-            ) as src:
+            with self.xarray_open_dataset(src_path, reference=reference) as src:
                 return list(src.data_vars)  # type: ignore
 
         @self.router.get(
@@ -56,24 +106,16 @@ class XarrayTilerFactory(BaseTilerFactory):
             show_times: bool = Query(
                 None, description="Show info about the time dimension"
             ),
+            reference: Optional[bool] = Query(False, title="reference", description="Whether the src_path is a kerchunk reference"),
+            drop_dim: Optional[str] = Query(None, description="Dimension to drop"),
         ) -> Info:
             """Return dataset's basic info."""
             show_times = show_times or False
 
-            with xarray.open_dataset(
-                src_path, engine="zarr", decode_coords="all"
+            with self.xarray_open_dataset(
+                src_path, reference=reference
             ) as src:
-                ds = src[variable]
-                times = []
-                if "time" in ds.dims:
-                    times = [str(x.data) for x in ds.time]
-                    # To avoid returning huge a `band_metadata` and `band_descriptions`
-                    # we only return info of the first time slice
-                    ds = src[variable][0]
-
-                # Make sure we are a CRS
-                crs = ds.rio.crs or "epsg:4326"
-                ds.rio.write_crs(crs, inplace=True)
+                ds, times = self.update_dataset(src, variable=variable, drop_dim=drop_dim)
 
                 with self.reader(ds) as dst:
                     info = dst.info().dict()
@@ -137,35 +179,9 @@ class XarrayTilerFactory(BaseTilerFactory):
         ) -> Response:
             """Create map tile from a dataset."""
             tms = self.supported_tms.get(TileMatrixSetId)
-            xr_open_args = {
-                'engine': 'zarr',
-                'decode_coords': 'all',
-                'consolidated': True
-            }
-            if multiscale:
-                xr_open_args['group'] = z
 
-            if reference:
-                fs = fsspec.filesystem("reference", fo=src_path, remote_options={"anon":True})
-                src_path = fs.get_mapper("")          
-                xr_open_args['backend_kwargs'] = {"consolidated":False}
-
-            with xarray.open_dataset(
-                src_path, **xr_open_args
-            ) as src:
-                if drop_dim:
-                    dim_to_drop, dim_val = drop_dim.split("=")
-                    src = src.sel({dim_to_drop: dim_val}).drop(dim_to_drop)
-                src = src.rename({'lat': 'y', 'lon': 'x'})
-
-                ds = src[variable]
-                if "time" in ds.dims:
-                    time_slice = time_slice or 0
-                    ds = ds[time_slice : time_slice + 1]
-
-                # Make sure we are a CRS
-                crs = ds.rio.crs or "epsg:4326"
-                ds.rio.write_crs(crs, inplace=True)
+            with self.xarray_open_dataset(src_path, z, multiscale, reference) as src:
+                ds = self.update_dataset(src, variable=variable, time_slice=time_slice, drop_dim=drop_dim)
 
                 with self.reader(ds, tms=tms) as dst:
                     image = dst.tile(
@@ -248,6 +264,9 @@ class XarrayTilerFactory(BaseTilerFactory):
             ),
             colormap=Depends(self.colormap_dependency),  # noqa
             render_params=Depends(self.render_dependency),  # noqa
+            z: Optional[int] = Query(0, description="Zoom level"),
+            multiscale: Optional[bool] = Query(False, title="multiscale", description="Whether the dataset has multiscale groups"),
+            reference: Optional[bool] = Query(False, title="reference", description="Whether the src_path is a kerchunk reference"),
         ) -> Dict:
             """Return TileJSON document for a dataset."""
             route_params = {
@@ -278,14 +297,10 @@ class XarrayTilerFactory(BaseTilerFactory):
 
             tms = self.supported_tms.get(TileMatrixSetId)
 
-            with xarray.open_dataset(
-                src_path, engine="zarr", decode_coords="all"
+            with self.xarray_open_dataset(
+                src_path, z=z, multiscale=multiscale, reference=reference
             ) as src:
-                ds = src[variable]
-
-                # Make sure we are a CRS
-                crs = ds.rio.crs or "epsg:4326"
-                ds.rio.write_crs(crs, inplace=True)
+                ds = self.update_dataset(src, variable=variable)
 
                 with self.reader(ds, tms=tms) as src_dst:
                     # see https://github.com/corteva/rioxarray/issues/645

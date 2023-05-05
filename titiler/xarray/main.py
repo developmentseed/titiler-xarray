@@ -35,8 +35,8 @@ app = FastAPI(
 
 ###############################################################################
 # Tiles endpoints
-xarray = XarrayTilerFactory()
-app.include_router(xarray.router, tags=["Xarray Tiler API"])
+xarray_factory = XarrayTilerFactory()
+app.include_router(xarray_factory.router, tags=["Xarray Tiler API"])
 
 ###############################################################################
 # TileMatrixSets endpoints

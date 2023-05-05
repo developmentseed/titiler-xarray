@@ -5,3 +5,9 @@ constructs>=10.0.0
 
 pydantic
 python-dotenv
+
+s3fs
+pytest
+requests
+aiohttp
+zarr
