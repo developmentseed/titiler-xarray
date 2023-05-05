@@ -131,7 +131,7 @@ class XarrayTilerFactory(BaseTilerFactory):
             ),
             colormap=Depends(self.colormap_dependency),
             render_params=Depends(self.render_dependency),
-             multiscale: Optional[bool] = Query(False, title="multiscale", description="Whether the dataset has multiscale groups"),
+            multiscale: Optional[bool] = Query(False, title="multiscale", description="Whether the dataset has multiscale groups"),
             reference: Optional[bool] = Query(False, title="reference", description="Whether the src_path is a kerchunk reference"),
             drop_dim: Optional[str] = Query(None, title="drop_dim", description="Dimension to drop and value to select (e.g. zlev=0)")
         ) -> Response:
@@ -146,8 +146,7 @@ class XarrayTilerFactory(BaseTilerFactory):
                 xr_open_args['group'] = z
 
             if reference:
-                fs = fsspec.filesystem("reference", fo=src_path,
-                                    remote_protocol="s3", remote_options={"anon":True})
+                fs = fsspec.filesystem("reference", fo=src_path, remote_options={"anon":True})
                 src_path = fs.get_mapper("")          
                 xr_open_args['backend_kwargs'] = {"consolidated":False}
 
