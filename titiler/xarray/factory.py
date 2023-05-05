@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 import fsspec
+import s3fs
 from typing import Dict, List, Literal, Optional, Tuple, Type
 from urllib.parse import urlencode
 
@@ -181,8 +182,7 @@ class XarrayTilerFactory(BaseTilerFactory):
             tms = self.supported_tms.get(TileMatrixSetId)
 
             with self.xarray_open_dataset(src_path, z, multiscale, reference) as src:
-                ds = self.update_dataset(src, variable=variable, time_slice=time_slice, drop_dim=drop_dim)
-
+                ds, _ = self.update_dataset(src, variable=variable, time_slice=time_slice, drop_dim=drop_dim)
                 with self.reader(ds, tms=tms) as dst:
                     image = dst.tile(
                         x,
@@ -300,7 +300,7 @@ class XarrayTilerFactory(BaseTilerFactory):
             with self.xarray_open_dataset(
                 src_path, z=z, multiscale=multiscale, reference=reference
             ) as src:
-                ds = self.update_dataset(src, variable=variable)
+                ds, _ = self.update_dataset(src, variable=variable)
 
                 with self.reader(ds, tms=tms) as src_dst:
                     # see https://github.com/corteva/rioxarray/issues/645
