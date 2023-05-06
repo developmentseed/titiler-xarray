@@ -31,12 +31,14 @@ class XarrayTilerFactory(BaseTilerFactory):
                             src_path: str,
                             z: Optional[str] = None,
                             multiscale: Optional[bool] = False,
-                            reference: Optional[bool] = False
+                            reference: Optional[bool] = False,
+                            decode_times: Optional[bool] = True,
                             ) -> xarray.Dataset:
         """Open dataset."""
         xr_open_args = {
             'engine': 'zarr',
             'decode_coords': 'all',
+            'decode_times': decode_times,
             'consolidated': True
         }
         if multiscale:
@@ -176,12 +178,13 @@ class XarrayTilerFactory(BaseTilerFactory):
             render_params=Depends(self.render_dependency),
             multiscale: Optional[bool] = Query(False, title="multiscale", description="Whether the dataset has multiscale groups"),
             reference: Optional[bool] = Query(False, title="reference", description="Whether the src_path is a kerchunk reference"),
-            drop_dim: Optional[str] = Query(None, title="drop_dim", description="Dimension to drop and value to select (e.g. zlev=0)")
+            drop_dim: Optional[str] = Query(None, title="drop_dim", description="Dimension to drop and value to select (e.g. zlev=0)"),
+            decode_times: Optional[bool] = Query(True, title="decode_times", descript="It times should be decoded.")
         ) -> Response:
             """Create map tile from a dataset."""
             tms = self.supported_tms.get(TileMatrixSetId)
 
-            with self.xarray_open_dataset(src_path, z, multiscale, reference) as src:
+            with self.xarray_open_dataset(src_path, z=z, multiscale=multiscale, reference=reference, decode_times=decode_times) as src:
                 ds, _ = self.update_dataset(src, variable=variable, time_slice=time_slice, drop_dim=drop_dim)
                 with self.reader(ds, tms=tms) as dst:
                     image = dst.tile(
