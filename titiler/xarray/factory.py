@@ -53,7 +53,7 @@ class XarrayTilerFactory(BaseTilerFactory):
     def update_dataset(self,
                        src: xarray.Dataset,
                        variable: str,
-                       time_slice: Optional[int] = None,
+                       time_slice: Optional[str] = None,
                        drop_dim: Optional[str] = None
                        ) -> xarray.Dataset:
         """Update dataset."""
@@ -69,14 +69,20 @@ class XarrayTilerFactory(BaseTilerFactory):
 
             # Sort the dataset by the updated longitude coordinates
             ds = ds.sortby(ds.x)
-        # Make sure we are a CRS
+        # Make sure we have a valid CRS
         crs = ds.rio.crs or "epsg:4326"
         ds.rio.write_crs(crs, inplace=True)
-
+        # TODO - address this time_slice issue
+        time_as_str = time_slice.split("T")[0]
         if "time" in ds.dims:
             times = [str(x.data) for x in ds.time]
-            time_slice = time_slice or 0
-            ds = ds[time_slice : time_slice + 1]
+            if time_slice:
+                # TODO(aimee): when do we actually need multiple slices of data?
+                # Perhaps if aggregating for coverage?
+                # ds = ds[time_slice : time_slice + 1]       
+                ds = ds.sel(time=time_as_str, method="nearest")
+            else:
+                ds = ds.isel(time=0)
         return ds, times
 
     def register_routes(self) -> None:  # noqa: C901
@@ -162,7 +168,7 @@ class XarrayTilerFactory(BaseTilerFactory):
             ),
             src_path: str = Depends(self.path_dependency),
             variable: str = Query(..., description="Xarray Variable"),
-            time_slice: int = Query(
+            time_slice: str = Query(
                 None, description="Slice of time to read (if available)"
             ),
             post_process=Depends(self.process_dependency),
@@ -239,7 +245,7 @@ class XarrayTilerFactory(BaseTilerFactory):
             ),
             src_path: str = Depends(self.path_dependency),
             variable: str = Query(..., description="Xarray Variable"),
-            time_slice: int = Query(
+            time_slice: str = Query(
                 None, description="Slice of time to read (if available)"
             ),  # noqa
             tile_format: Optional[ImageType] = Query(
@@ -328,7 +334,7 @@ class XarrayTilerFactory(BaseTilerFactory):
             ),  # noqa
             src_path=Depends(self.path_dependency),  # noqa
             variable: str = Query(..., description="Xarray Variable"),  # noqa
-            time_slice: int = Query(
+            time_slice: str = Query(
                 None, description="Slice of time to read (if available)"
             ),  # noqa
             tile_format: Optional[ImageType] = Query(
