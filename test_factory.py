@@ -17,4 +17,12 @@ def test_get_variables():
     })
     assert response.status_code == 200
     assert response.json() == ['anom', 'err', 'ice', 'sst']
+    # cmip6_zarr = f"{DATA_DIR}/cmip6.zarr"
+    # power_zarr = f"{DATA_DIR}/power_901_monthly_meteorology_utc.zarr"
+    # response = client.get("/variables", params={
+    #     "url": power_zarr,
+    #     "reference": True
+    # }) 
+    # assert response.status_code == 200
+    # assert response.json() == ['anom', 'err', 'ice', 'sst']    
 
