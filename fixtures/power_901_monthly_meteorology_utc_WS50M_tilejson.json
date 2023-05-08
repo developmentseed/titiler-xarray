@@ -1,0 +1,21 @@
+{
+    "bounds": [
+        -180,
+        -90,
+        180,
+        90
+    ],
+    "center": [
+        0,
+        0,
+        24
+    ],
+    "maxzoom": 24,
+    "minzoom": 24,
+    "scheme": "xyz",
+    "tilejson": "2.2.0",
+    "tiles": [
+        "http://testserver/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=fixtures%2Fpower_901_monthly_meteorology_utc.zarr&variable=WS50M&decode_times=false"
+    ],
+    "version": "1.0.0"
+}

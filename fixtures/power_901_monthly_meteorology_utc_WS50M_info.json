@@ -1,0 +1,29 @@
+{
+    "attrs": {
+        "long_name": "Wind Speed at 50 Meters",
+        "standard_name": "Wind_Speed_at_50_Meters",
+        "units": "m/s",
+        "valid_max": 75,
+        "valid_min": 0,
+        "valid_range": [
+            0,
+            75
+        ]
+    },
+    "band_descriptions": [],
+    "band_metadata": [],
+    "bounds": [
+        null,
+        null,
+        null,
+        null
+    ],
+    "count": 1,
+    "dtype": "float64",
+    "height": 361,
+    "maxzoom": 24,
+    "minzoom": 24,
+    "name": "WS50M",
+    "nodata_type": "Nodata",
+    "width": 576
+}
