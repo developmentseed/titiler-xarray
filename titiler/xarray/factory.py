@@ -73,10 +73,10 @@ class XarrayTilerFactory(BaseTilerFactory):
         crs = ds.rio.crs or "epsg:4326"
         ds.rio.write_crs(crs, inplace=True)
         # TODO - address this time_slice issue
-        time_as_str = time_slice.split("T")[0]
         if "time" in ds.dims:
             times = [str(x.data) for x in ds.time]
             if time_slice:
+                time_as_str = time_slice.split("T")[0]
                 # TODO(aimee): when do we actually need multiple slices of data?
                 # Perhaps if aggregating for coverage?
                 # ds = ds[time_slice : time_slice + 1]       
@@ -96,10 +96,15 @@ class XarrayTilerFactory(BaseTilerFactory):
         def variable_endpoint(
             src_path: str = Depends(self.path_dependency),
             reference: Optional[bool] = Query(False, title="reference", description="Whether the src_path is a kerchunk reference"),
+            decode_times: Optional[bool] = Query(True, title="decode_times", description="Whether to decode times"),
         ) -> List[str]:
 
             """return available variables."""
-            with self.xarray_open_dataset(src_path, reference=reference) as src:
+            with self.xarray_open_dataset(
+                src_path, 
+                reference=reference,
+                decode_times=decode_times
+            ) as src:
                 return list(src.data_vars)  # type: ignore
 
         @self.router.get(
@@ -117,12 +122,13 @@ class XarrayTilerFactory(BaseTilerFactory):
             ),
             reference: Optional[bool] = Query(False, title="reference", description="Whether the src_path is a kerchunk reference"),
             drop_dim: Optional[str] = Query(None, description="Dimension to drop"),
+            decode_times: Optional[bool] = Query(True, title="decode_times", description="Whether to decode times"),
         ) -> Info:
             """Return dataset's basic info."""
             show_times = show_times or False
 
             with self.xarray_open_dataset(
-                src_path, reference=reference
+                src_path, reference=reference, decode_times=decode_times
             ) as src:
                 ds, times = self.update_dataset(src, variable=variable, drop_dim=drop_dim)
 
@@ -276,6 +282,7 @@ class XarrayTilerFactory(BaseTilerFactory):
             z: Optional[int] = Query(0, description="Zoom level"),
             multiscale: Optional[bool] = Query(False, title="multiscale", description="Whether the dataset has multiscale groups"),
             reference: Optional[bool] = Query(False, title="reference", description="Whether the src_path is a kerchunk reference"),
+            decode_times: Optional[bool] = Query(True, title="decode_times", descript="It times should be decoded.")
         ) -> Dict:
             """Return TileJSON document for a dataset."""
             route_params = {
@@ -307,9 +314,10 @@ class XarrayTilerFactory(BaseTilerFactory):
             tms = self.supported_tms.get(TileMatrixSetId)
 
             with self.xarray_open_dataset(
-                src_path, z=z, multiscale=multiscale, reference=reference
+                src_path, z=z, multiscale=multiscale, reference=reference, decode_times=decode_times
             ) as src:
-                ds, _ = self.update_dataset(src, variable=variable)
+                ds, _ = self.update_dataset(src, time_slice=time_slice, 
+                                            variable=variable)
 
                 with self.reader(ds, tms=tms) as src_dst:
                     # see https://github.com/corteva/rioxarray/issues/645
