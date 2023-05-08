@@ -47,7 +47,7 @@ def test_get_info_reference():
     })
     print(response.json())
     assert response.status_code == 200
-    with open(f"{DATA_DIR}/noaa_oisst_sst_info.json") as f:
+    with open(f"{DATA_DIR}/responses/noaa_oisst_sst_info.json") as f:
         assert response.json() == json.load(f)
 
 def test_get_info():
@@ -58,7 +58,7 @@ def test_get_info():
         "decode_times": False
     }) 
     assert response.status_code == 200
-    with open(f"{DATA_DIR}/power_901_monthly_meteorology_utc_WS50M_info.json") as f:
+    with open(f"{DATA_DIR}/responses/power_901_monthly_meteorology_utc_WS50M_info.json") as f:
         assert response.json() == json.load(f)
 
 def test_get_tilejson_reference():
@@ -69,7 +69,7 @@ def test_get_tilejson_reference():
         "reference": True
     })
     assert response.status_code == 200
-    with open(f"{DATA_DIR}/noaa_oisst_sst_tilejson.json") as f:
+    with open(f"{DATA_DIR}/responses/noaa_oisst_sst_tilejson.json") as f:
         assert response.json() == json.load(f)
 
 def test_get_tilejson():
@@ -80,7 +80,7 @@ def test_get_tilejson():
         "decode_times": False
     }) 
     assert response.status_code == 200
-    with open(f"{DATA_DIR}/power_901_monthly_meteorology_utc_WS50M_tilejson.json") as f:
+    with open(f"{DATA_DIR}/responses/power_901_monthly_meteorology_utc_WS50M_tilejson.json") as f:
         assert response.json() == json.load(f)
 
 # TODO(aimee): These depend on connectivity, possible to do without?
