@@ -79,7 +79,9 @@ class XarrayTilerFactory(BaseTilerFactory):
                 time_as_str = time_slice.split("T")[0]
                 # TODO(aimee): when do we actually need multiple slices of data?
                 # Perhaps if aggregating for coverage?
-                # ds = ds[time_slice : time_slice + 1]       
+                # ds = ds[time_slice : time_slice + 1]
+                if ds['time'].dtype == 'O':
+                    ds['time'] = ds['time'].astype("datetime64[ns]")
                 ds = ds.sel(time=time_as_str, method="nearest")
             else:
                 ds = ds.isel(time=0)
@@ -101,7 +103,7 @@ class XarrayTilerFactory(BaseTilerFactory):
 
             """return available variables."""
             with self.xarray_open_dataset(
-                src_path, 
+                src_path,
                 reference=reference,
                 decode_times=decode_times
             ) as src:
@@ -316,7 +318,7 @@ class XarrayTilerFactory(BaseTilerFactory):
             with self.xarray_open_dataset(
                 src_path, z=z, multiscale=multiscale, reference=reference, decode_times=decode_times
             ) as src:
-                ds, _ = self.update_dataset(src, time_slice=time_slice, 
+                ds, _ = self.update_dataset(src, time_slice=time_slice,
                                             variable=variable)
 
                 with self.reader(ds, tms=tms) as src_dst:
