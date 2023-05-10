@@ -1,0 +1,21 @@
+{
+    "bounds": [
+        -180,
+        -90,
+        180,
+        90
+    ],
+    "minzoom": 0,
+    "maxzoom": 0,
+    "band_metadata": [],
+    "band_descriptions": [],
+    "dtype": "uint8",
+    "nodata_type": "None",
+    "count": 1,
+    "height": 180,
+    "attrs": {
+        "units": "unit1"
+    },
+    "name": "var1",
+    "width": 360
+}
