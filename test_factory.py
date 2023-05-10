@@ -39,7 +39,6 @@ def test_get_info_reference():
         "variable": "sst",
         "reference": True
     })
-    print(response.json())
     assert response.status_code == 200
     with open(f"{DATA_DIR}/responses/noaa_oisst_sst_info.json") as f:
         assert response.json() == json.load(f)
