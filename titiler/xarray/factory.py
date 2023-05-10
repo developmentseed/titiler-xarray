@@ -2,9 +2,9 @@
 
 from dataclasses import dataclass
 import fsspec
-import s3fs
 from typing import Dict, List, Literal, Optional, Tuple, Type
 from urllib.parse import urlencode
+import numpy as np
 
 import xarray
 from fastapi import Depends, Path, Query
@@ -82,7 +82,7 @@ class XarrayTilerFactory(BaseTilerFactory):
                 # ds = ds[time_slice : time_slice + 1]
                 if ds['time'].dtype == 'O':
                     ds['time'] = ds['time'].astype("datetime64[ns]")
-                ds = ds.sel(time=time_as_str, method="nearest")
+                ds = ds.sel(time=np.array(time_as_str, dtype=np.datetime64), method="nearest")
             else:
                 ds = ds.isel(time=0)
         return ds, times
