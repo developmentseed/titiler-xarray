@@ -14,6 +14,7 @@ $ npm install
 ## Running Locally
 
 ```bash
+pip install -e .
 uvicorn titiler.xarray.main:app --reload --port 8002
 ```
 
