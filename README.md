@@ -1,6 +1,6 @@
-## titiler-xarray
+# titiler-xarray
 
-## Deploy
+## Setup
 
 ```bash
 # Install AWS CDK requirements
