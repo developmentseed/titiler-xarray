@@ -10,16 +10,17 @@ app.include_router(xarray_factory.router)
 client = TestClient(app)
 DATA_DIR = 'fixtures'
 test_zarr_store = f"{DATA_DIR}/test_zarr_store.zarr"
+reference = f"{DATA_DIR}/reference.json"
 
 def test_get_variables_reference():
     # With reference file
-    noaa_oisst_reference = f"{DATA_DIR}/noaa_oisst_reference.json"
     response = client.get("/variables", params={
-        "url": noaa_oisst_reference,
-        "reference": True
+        "url": reference,
+        "reference": True,
+        "decode_times": False
     })
     assert response.status_code == 200
-    assert response.json() == ['anom', 'err', 'ice', 'sst']
+    assert response.json() == ['var1', 'var2', 'var3', 'var4']
 
 def test_get_variables():
     response = client.get("/variables", params={
@@ -31,16 +32,15 @@ def test_get_variables():
     main_list = response.json()
     assert main_list == sublist
 
-# pytest test_factory.py::test_get_info
 def test_get_info_reference():
-    noaa_oisst_reference = f"{DATA_DIR}/noaa_oisst_reference.json"
     response = client.get("/info", params={
-        "url": noaa_oisst_reference,
-        "variable": "sst",
-        "reference": True
+        "url": reference,
+        "variable": "var1",
+        "reference": True,
+        "decode_times": False
     })
     assert response.status_code == 200
-    with open(f"{DATA_DIR}/responses/noaa_oisst_sst_info.json") as f:
+    with open(f"{DATA_DIR}/responses/reference_info.json") as f:
         assert response.json() == json.load(f)
 
 def test_get_info():
@@ -54,14 +54,14 @@ def test_get_info():
         assert response.json() == json.load(f)
 
 def test_get_tilejson_reference():
-    noaa_oisst_reference = f"{DATA_DIR}/noaa_oisst_reference.json"
     response = client.get("/tilejson.json", params={
-        "url": noaa_oisst_reference,
-        "variable": "sst",
-        "reference": True
+        "url": reference,
+        "variable": "var1",
+        "reference": True,
+        "decode_times": False
     })
     assert response.status_code == 200
-    with open(f"{DATA_DIR}/responses/noaa_oisst_sst_tilejson.json") as f:
+    with open(f"{DATA_DIR}/responses/refernce_tilejson.json") as f:
         assert response.json() == json.load(f)
 
 def test_get_tilejson():
@@ -74,14 +74,12 @@ def test_get_tilejson():
     with open(f"{DATA_DIR}/responses/test_CDD0_tilejson.json") as f:
         assert response.json() == json.load(f)
 
-# TODO(aimee): This depends on connectivity + access to NOAA OISST files
-# We should store mock data for the kercunk reference in fixtures/.
 def test_get_tile_reference():
-    noaa_oisst_reference = f"{DATA_DIR}/noaa_oisst_reference.json"
     response = client.get("/tiles/0/0/0.png", params={
-        "url": noaa_oisst_reference,
-        "variable": "sst",
-        "reference": True
+        "url": reference,
+        "variable": "var1",
+        "reference": True,
+        "decode_times": False
     })
     assert response.status_code == 200
     assert response.headers['Content-Type'] == 'image/png'

@@ -19,10 +19,16 @@ uvicorn titiler.xarray.main:app --reload --port 8002
 
 ## Testing
 
+To run all the tests:
+
 ```bash
-# Currently the tiles tests require internect connectivity and a valid AWS account
-export AWS_PROFILE=blah
 pytest
+```
+
+To run just one test:
+
+```bash
+pytest test_factory.py::test_get_info
 ```
 
 ## Deploy
