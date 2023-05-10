@@ -22,7 +22,7 @@ from titiler.core.resources.responses import JSONResponse
 
 def xarray_open_dataset(
     src_path: str,
-    z: Optional[str] = None,
+    z: Optional[int] = None,
     multiscale: Optional[bool] = False,
     reference: Optional[bool] = False,
     decode_times: Optional[bool] = True,
