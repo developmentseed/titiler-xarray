@@ -3,11 +3,7 @@
 import logging
 
 from fastapi import FastAPI
-from rio_tiler.io import STACReader
 from starlette.middleware.cors import CORSMiddleware
-from starlette.requests import Request
-from starlette.responses import HTMLResponse
-from starlette.templating import Jinja2Templates
 from starlette_cramjam.middleware import CompressionMiddleware
 
 from titiler.core.errors import DEFAULT_STATUS_CODES, add_exception_handlers
