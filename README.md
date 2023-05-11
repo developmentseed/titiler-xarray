@@ -13,9 +13,12 @@ $ npm install
 
 ## Running Locally
 
+Note: The CDK  deployment (in `/stack`) depends on a Dockerfile which has some additional python dependencies and specifies versions. These are required when running the application on AWS Lambda. In order to simulate the AWS Lambda environment locally, you may want to install these dependencies in your virtual environment as well.
+
+```bash
 ```bash
 pip install -e .
-uvicorn titiler.xarray.main:app --reload --port 8002
+uvicorn titiler.xarray.main:app --reload
 ```
 
 ## Testing
