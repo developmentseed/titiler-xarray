@@ -33,7 +33,8 @@ dependencies = [
     "aiohttp",
     "titiler.core>=0.11.1,<0.12",
     "starlette-cramjam>=0.3,<0.4",
-    "python-dotenv"
+    "python-dotenv",
+    "zarr==2.14.2"
 ]
 
 [project.optional-dependencies]
