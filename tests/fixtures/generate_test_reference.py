@@ -7,68 +7,52 @@ import kerchunk.hdf
 import netCDF4 as nc
 import numpy as np
 from kerchunk.combine import MultiZarrToZarr
-
+from kerchunk.hdf import SingleHdf5ToZarr
 
 def create_netcdf(filename, date):
-    with nc.Dataset(filename, "w", format="NETCDF4") as dataset:
-        # Create dimensions
-        dataset.createDimension("time", None)
-        dataset.createDimension("lat", 180)
-        dataset.createDimension("lon", 360)
+    with nc.Dataset(filename, 'w', format='NETCDF4') as ds:
+        time = ds.createDimension('time', None)
+        lat = ds.createDimension('lat', 10)
+        lon = ds.createDimension('lon', 10)
 
-        # Create variables
-        times = dataset.createVariable("time", np.float64, ("time",))
-        latitudes = dataset.createVariable("lat", np.float32, ("lat",))
-        longitudes = dataset.createVariable("lon", np.float32, ("lon",))
+        times = ds.createVariable('time', 'f4', ('time',))        
+        lats = ds.createVariable('lat', 'f4', ('lat',))
+        lons = ds.createVariable('lon', 'f4', ('lon',))
+        value = ds.createVariable('value', 'f4', ('time', 'lat', 'lon',))
+        value.units = 'Unknown'
 
-        var1 = dataset.createVariable("var1", np.uint8, ("time", "lat", "lon"))
-        var2 = dataset.createVariable("var2", np.uint8, ("time", "lat", "lon"))
-        var3 = dataset.createVariable("var3", np.uint8, ("time", "lat", "lon"))
-        var4 = dataset.createVariable("var4", np.uint8, ("time", "lat", "lon"))
+        lats[:] = np.arange(40.0, 50.0, 1.0)
+        lons[:] = np.arange(-110.0, -100.0, 1.0)
+        times[:] = [date]
 
-        # Assign units and descriptions
-        times.units = "hours since 0001-01-01 00:00:00"
-        times.calendar = "gregorian"
-        latitudes.units = "degrees_north"
-        longitudes.units = "degrees_east"
-        var1.units = "unit1"
-        var2.units = "unit2"
-        var3.units = "unit3"
-        var4.units = "unit4"
+        print('var size before adding data', value.shape)
 
-        # Fill in data
-        times[:] = nc.date2num([date], units=times.units, calendar=times.calendar)
-        latitudes[:] = np.arange(-89.5, 90.5, 1.0)
-        longitudes[:] = np.arange(-179.5, 180.5, 1.0)
+        value[0, :, :] = np.random.uniform(0, 100, size=(10, 10))
 
-        var1_data = np.random.randn(1, len(latitudes), len(longitudes))
-        var2_data = np.random.randn(1, len(latitudes), len(longitudes))
-        var3_data = np.random.randn(1, len(latitudes), len(longitudes))
-        var4_data = np.random.randn(1, len(latitudes), len(longitudes))
+        print('var size after adding first data', value.shape)
+        xval = np.linspace(0.5, 5.0, 10)
+        yval = np.linspace(0.5, 5.0, 10)
+        value[1, :, :] = np.array(xval.reshape(-1, 1) + yval)
 
-        var1[:] = var1_data
-        var2[:] = var2_data
-        var3[:] = var3_data
-        var4[:] = var4_data
-
+        print('var size after adding second data', value.shape)
 
 # Set the start date for the observations
-start_date = datetime(2023, 5, 10)
+start_date = np.datetime64(datetime(2023, 5, 10))
+end_date = np.datetime64(datetime(2023, 5, 11))
 
 # Generate the two netCDF files
-create_netcdf("fixtures/observation_1.nc", start_date)
-create_netcdf("fixtures/observation_2.nc", start_date + timedelta(days=1))
+create_netcdf('tests/fixtures/observation_1.nc', start_date)
+create_netcdf('tests/fixtures/observation_2.nc', end_date)
 
-urls = ["fixtures/observation_1.nc", "fixtures/observation_2.nc"]
-so = {"anon": True, "default_fill_cache": False, "default_cache_type": "first"}
+urls = ["tests/fixtures/observation_1.nc", "tests/fixtures/observation_2.nc"]
 singles = []
-for u in urls:
-    with fsspec.open(u, **so) as inf:
-        h5chunks = kerchunk.hdf.SingleHdf5ToZarr(inf, u, inline_threshold=100)
+for url in urls:
+    with fsspec.open(url, mode="rb", anon=True) as infile:
+        h5chunks = SingleHdf5ToZarr(infile, url, inline_threshold=100)
         singles.append(h5chunks.translate())
 
 mzz = MultiZarrToZarr(
-    singles, remote_protocol="s3", remote_options={"anon": True}, concat_dims=["time"]
+    singles, concat_dims=["time"]
 )
 
-out = mzz.translate("fixtures/reference.json")
+out = mzz.translate("tests/fixtures/reference.json")

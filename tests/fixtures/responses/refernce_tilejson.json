@@ -5,17 +5,12 @@
     "tiles": [
         "http://testserver/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=tests%2Ffixtures%2Freference.json&variable=var1&reference=true&decode_times=false"
     ],
-    "minzoom": 0,
-    "maxzoom": 0,
-    "bounds": [
-        -180,
-        -90,
-        180,
-        90
-    ],
+    "minzoom": 24,
+    "maxzoom": 24,
+    "bounds": [-180.0, 0.0, 180.0, 0.0],
     "center": [
         0,
         0,
-        0
+        24
     ]
 }

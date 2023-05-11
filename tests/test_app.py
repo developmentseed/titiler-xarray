@@ -13,7 +13,7 @@ def test_get_variables_reference(app):
         params={"url": reference, "reference": True, "decode_times": False},
     )
     assert response.status_code == 200
-    assert response.json() == ["var1", "var2", "var3", "var4"]
+    assert response.json() == ["value"]
 
 
 def test_get_variables(app):
@@ -31,7 +31,7 @@ def test_get_info_reference(app):
         "/info",
         params={
             "url": reference,
-            "variable": "var1",
+            "variable": "value",
             "reference": True,
             "decode_times": False,
         },
@@ -56,13 +56,13 @@ def test_get_tilejson_reference(app):
         "/tilejson.json",
         params={
             "url": reference,
-            "variable": "var1",
+            "variable": "value",
             "reference": True,
             "decode_times": False,
         },
     )
     assert response.status_code == 200
-    with open(os.path.join(DATA_DIR, "responses", "refernce_tilejson.json")) as f:
+    with open(os.path.join(DATA_DIR, "responses", "reference_tilejson.json")) as f:
         assert response.json() == json.load(f)
 
 
@@ -81,7 +81,7 @@ def test_get_tile_reference(app):
         "/tiles/0/0/0.png",
         params={
             "url": reference,
-            "variable": "var1",
+            "variable": "value",
             "reference": True,
             "decode_times": False,
         },

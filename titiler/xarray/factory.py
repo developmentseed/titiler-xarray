@@ -228,7 +228,7 @@ class XarrayTilerFactory(BaseTilerFactory):
                 description="Dimension to drop and value to select (e.g. zlev=0)",
             ),
             decode_times: Optional[bool] = Query(
-                True, title="decode_times", descript="It times should be decoded."
+                True, title="decode_times", descript="If times should be decoded."
             ),
         ) -> Response:
             """Create map tile from a dataset."""
