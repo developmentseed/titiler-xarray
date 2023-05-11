@@ -35,7 +35,7 @@ python -m pytest --cov titiler.xarray --cov-report term-missing -s -vv
 To run just one test:
 
 ```bash
-pytest test_factory.py::test_get_info
+python -m pytest tests/test_app.py::test_get_info --cov titiler.xarray --cov-report term-missing -s -vv
 ```
 
 ## Deploy
