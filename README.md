@@ -23,7 +23,7 @@ uvicorn titiler.xarray.main:app --reload
 
 ## Testing
 
-Tests use data generated locally by using `fixtures/generate_test_*.py` scripts.
+Tests use data generated locally by using `tests/fixtures/generate_test_*.py` scripts.
 
 To run all the tests:
 
