@@ -25,16 +25,16 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-    "pandas==1.5.3",
-    "rioxarray==0.14.1",
-    "fsspec==2023.4.0",
-    "s3fs==2023.4.0",
+    "xarray",
+    "rioxarray",
+    "zarr",
+    "fsspec",
+    "s3fs",
     "requests",
     "aiohttp",
     "titiler.core>=0.11.1,<0.12",
     "starlette-cramjam>=0.3,<0.4",
-    "python-dotenv",
-    "zarr==2.14.2"
+    "python-dotenv"
 ]
 
 [project.optional-dependencies]
