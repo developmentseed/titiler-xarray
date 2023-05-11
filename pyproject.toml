@@ -34,7 +34,7 @@ dependencies = [
     "aiohttp",
     "titiler.core>=0.11.1,<0.12",
     "starlette-cramjam>=0.3,<0.4",
-    "python-dotenv",
+    "python-dotenv"
 ]
 
 [project.optional-dependencies]
@@ -74,6 +74,7 @@ select = [
     "D1",  # pydocstyle errors
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
+    "F",  # flake8
     "C",  # flake8-comprehensions
     "B",  # flake8-bugbear
 ]
@@ -82,6 +83,11 @@ ignore = [
     "B008",  # do not perform function calls in argument defaults
     "B905",  # ignore zip() without an explicit strict= parameter, only support with python >3.10
 ]
+
+[tool.ruff.per-file-ignores]
+"tests/test_app.py" = ["D1"]
+"tests/fixtures/generate_test_zarr.py" = ["D1"]
+"tests/fixtures/generate_test_reference.py" = ["D1"]
 
 [tool.mypy]
 no_implicit_optional = true
