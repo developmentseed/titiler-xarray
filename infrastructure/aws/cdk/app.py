@@ -41,7 +41,7 @@ class LambdaStack(Stack):
         concurrent: Optional[int] = None,
         permissions: Optional[List[iam.PolicyStatement]] = None,
         environment: Optional[Dict] = None,
-        code_dir: str = "./",
+        context_dir: str = "../../",
         **kwargs: Any,
     ) -> None:
         """Define stack."""
@@ -55,8 +55,9 @@ class LambdaStack(Stack):
             f"{id}-lambda",
             runtime=runtime,
             code=aws_lambda.Code.from_docker_build(
-                path=os.path.abspath(code_dir),
-                file="stack/lambda/Dockerfile",
+                path=os.path.abspath(context_dir),
+                file="infrastructure/aws/lambda/Dockerfile",
+                platform="linux/amd64",
             ),
             handler="handler.handler",
             memory_size=memory,
