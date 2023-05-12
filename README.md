@@ -8,8 +8,6 @@
 
 ## Running Locally
 
-Note: The CDK  deployment (in `/stack`) depends on a Dockerfile which has some additional python dependencies and specifies versions. These are required when running the application on AWS Lambda. In order to simulate the AWS Lambda environment locally, you may want to install these dependencies in your virtual environment as well.
-
 ```bash
 # It's recommanded to use virtual environment
 python -m pip install --upgrade virtualenv
