@@ -84,3 +84,9 @@ An example of Cloud Stack is available for AWS
     # Deploy in specific region
     AWS_DEFAULT_REGION=eu-central-1 AWS_REGION=eu-central-1 AWS_PROFILE=myprofile STACK_STAGE=staging  npm --prefix infrastructure/aws run cdk -- deploy titiler-xarray-staging
     ```
+
+
+**Important**
+
+In AWS Lambda environment we need to have specific version of botocore, S3FS, FSPEC and other libraries.
+To make sure the application will both work locally and in AWS Lambda environment you can install the dependencies using `python -m pip install -r infrastructure/aws/requirement-lambda.txt`
