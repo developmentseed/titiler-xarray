@@ -25,6 +25,6 @@ RUN find /asset -type d -a -name 'tests' -print0 | xargs -0 rm -rf
 RUN rm -rdf /asset/numpy/doc/ /asset/bin /asset/geos_license /asset/Misc
 RUN rm -rdf /asset/boto3* /asset/botocore*
 
-COPY stack/lambda/handler.py /asset/handler.py
+COPY infrastructure/aws/lambda/handler.py /asset/handler.py
 
 CMD ["echo", "hello world"]
