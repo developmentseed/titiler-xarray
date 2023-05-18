@@ -75,7 +75,6 @@ def get_variable(
 
     # TODO - address this time_slice issue
     if "time" in da.dims:
-        # times = [str(x.data) for x in ds.time]
         if time_slice:
             time_as_str = time_slice.split("T")[0]
             # TODO(aimee): when do we actually need multiple slices of data?
