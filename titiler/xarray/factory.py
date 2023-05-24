@@ -441,7 +441,7 @@ class XarrayTilerFactory(BaseTilerFactory):
 
             tms = self.supported_tms.get(TileMatrixSetId)
             return self.templates.TemplateResponse(
-                name="index.html",
+                name="map.html",
                 context={
                     "request": request,
                     "tilejson_endpoint": tilejson_url,
