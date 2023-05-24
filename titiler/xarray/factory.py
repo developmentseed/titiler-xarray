@@ -14,7 +14,7 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse, Response
 
 from titiler.core.dependencies import RescalingParams
-from titiler.core.factory import BaseTilerFactory, img_endpoint_params, templates
+from titiler.core.factory import BaseTilerFactory, img_endpoint_params
 from titiler.core.models.mapbox import TileJSON
 from titiler.core.resources.enums import ImageType
 from titiler.core.resources.responses import JSONResponse
@@ -469,8 +469,8 @@ class XarrayTilerFactory(BaseTilerFactory):
                 tilejson_url += f"?{urlencode(request.query_params._list)}"
 
             tms = self.supported_tms.get(TileMatrixSetId)
-            return templates.TemplateResponse(
-                name="index.html",
+            return self.templates.TemplateResponse(
+                name="map.html",
                 context={
                     "request": request,
                     "tilejson_endpoint": tilejson_url,
