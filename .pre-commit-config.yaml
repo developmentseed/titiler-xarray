@@ -28,7 +28,5 @@ repos:
       - id: mypy
         language_version: python
         exclude: tests/.*
-        # additional_dependencies:
-        # - types-simplejson
-        # - types-attrs
-        # - types-cachetools
+        additional_dependencies:
+        - types-attrs

@@ -1,14 +1,10 @@
 """TiTiler.xarray factory."""
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Literal, Optional, Tuple, Type
+from typing import Dict, List, Literal, Optional, Tuple, Type
 from urllib.parse import urlencode
 
-import fsspec
-import numpy
-import xarray
 from fastapi import Depends, Path, Query
-from rio_tiler.io import BaseReader, XarrayReader
 from rio_tiler.models import Info
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, Response
@@ -18,85 +14,14 @@ from titiler.core.factory import BaseTilerFactory, img_endpoint_params
 from titiler.core.models.mapbox import TileJSON
 from titiler.core.resources.enums import ImageType
 from titiler.core.resources.responses import JSONResponse
-
-
-def xarray_open_dataset(
-    src_path: str,
-    group: Optional[Any] = None,
-    reference: Optional[bool] = False,
-    decode_times: Optional[bool] = True,
-) -> xarray.Dataset:
-    """Open dataset."""
-    xr_open_args: Dict[str, Any] = {
-        "engine": "zarr",
-        "decode_coords": "all",
-        "decode_times": decode_times,
-        "consolidated": True,
-    }
-    if group:
-        xr_open_args["group"] = group
-
-    if reference:
-        fs = fsspec.filesystem(
-            "reference",
-            fo=src_path,
-            remote_options={"anon": True},
-        )
-        src_path = fs.get_mapper("")
-        xr_open_args["backend_kwargs"] = {"consolidated": False}
-
-    return xarray.open_dataset(src_path, **xr_open_args)
-
-
-def get_variable(
-    ds: xarray.Dataset,
-    variable: str,
-    time_slice: Optional[str] = None,
-    drop_dim: Optional[str] = None,
-) -> xarray.DataArray:
-    """Get Xarray variable as DataArray."""
-    ds = ds.rename({"lat": "y", "lon": "x"})
-    if drop_dim:
-        dim_to_drop, dim_val = drop_dim.split("=")
-        ds = ds.sel({dim_to_drop: dim_val}).drop(dim_to_drop)
-
-    da = ds[variable]
-
-    if (da.x > 180).any():
-        # Adjust the longitude coordinates to the -180 to 180 range
-        da = da.assign_coords(x=(da.x + 180) % 360 - 180)
-
-        # Sort the dataset by the updated longitude coordinates
-        da = da.sortby(da.x)
-
-    # Make sure we have a valid CRS
-    crs = da.rio.crs or "epsg:4326"
-    da.rio.write_crs(crs, inplace=True)
-
-    # TODO - address this time_slice issue
-    if "time" in da.dims:
-        if time_slice:
-            time_as_str = time_slice.split("T")[0]
-            # TODO(aimee): when do we actually need multiple slices of data?
-            # Perhaps if aggregating for coverage?
-            # ds = ds[time_slice : time_slice + 1]
-            if da["time"].dtype == "O":
-                da["time"] = da["time"].astype("datetime64[ns]")
-            da = da.sel(
-                time=numpy.array(time_as_str, dtype=numpy.datetime64), method="nearest"
-            )
-        else:
-            da = da.isel(time=0)
-
-    return da
+from titiler.xarray.reader import ZarrReader
 
 
 @dataclass
-class XarrayTilerFactory(BaseTilerFactory):
-    """Xarray Tiler Factory."""
+class ZarrTilerFactory(BaseTilerFactory):
+    """Zarr Tiler Factory."""
 
-    # Default reader is set to rio_tiler.io.Reader
-    reader: Type[BaseReader] = XarrayReader
+    reader: Type[ZarrReader] = ZarrReader
 
     def register_routes(self) -> None:  # noqa: C901
         """Register Info / Tiles / TileJSON endoints."""
@@ -121,13 +46,7 @@ class XarrayTilerFactory(BaseTilerFactory):
             ),
         ) -> List[str]:
             """return available variables."""
-            with xarray_open_dataset(
-                url,
-                group=group,
-                reference=reference,
-                decode_times=decode_times,
-            ) as ds:
-                return list(ds.data_vars)  # type: ignore
+            return self.reader.list_variables(url, group=group, reference=reference)
 
         @self.router.get(
             "/info",
@@ -141,12 +60,12 @@ class XarrayTilerFactory(BaseTilerFactory):
             group: Optional[int] = Query(
                 None, description="Select a specific Zarr Group (Zoom Level)."
             ),
-            reference: Optional[bool] = Query(
+            reference: bool = Query(
                 False,
                 title="reference",
                 description="Whether the src_path is a kerchunk reference",
             ),
-            decode_times: Optional[bool] = Query(
+            decode_times: bool = Query(
                 True, title="decode_times", description="Whether to decode times"
             ),
             variable: str = Query(..., description="Xarray Variable"),
@@ -156,23 +75,21 @@ class XarrayTilerFactory(BaseTilerFactory):
             ),
         ) -> Info:
             """Return dataset's basic info."""
-            with xarray_open_dataset(
+            with self.reader(
                 url,
+                variable=variable,
                 group=group,
                 reference=reference,
                 decode_times=decode_times,
-            ) as ds:
-                da = get_variable(ds, variable=variable, drop_dim=drop_dim)
-
-                with self.reader(da) as dst:
-                    info = dst.info().dict()
-
-                if show_times and "time" in da.dims:
-                    times = [str(x.data) for x in da.time]
+                drop_dim=drop_dim,
+            ) as src_dst:
+                info = src_dst.info().dict()
+                if show_times and "time" in src_dst.input.dims:
+                    times = [str(x.data) for x in src_dst.input.time]
                     info["count"] = len(times)
                     info["times"] = times
 
-            return info
+            return Info(**info)
 
         @self.router.get(r"/tiles/{z}/{x}/{y}", **img_endpoint_params)
         @self.router.get(r"/tiles/{z}/{x}/{y}.{format}", **img_endpoint_params)
@@ -211,12 +128,12 @@ class XarrayTilerFactory(BaseTilerFactory):
                 title="multiscale",
                 description="Whether the dataset has multiscale groups (Zoom levels)",
             ),
-            reference: Optional[bool] = Query(
+            reference: bool = Query(
                 False,
                 title="reference",
                 description="Whether the src_path is a kerchunk reference",
             ),
-            decode_times: Optional[bool] = Query(
+            decode_times: bool = Query(
                 True, title="decode_times", description="Whether to decode times"
             ),
             variable: str = Query(..., description="Xarray Variable"),
@@ -239,23 +156,22 @@ class XarrayTilerFactory(BaseTilerFactory):
             """Create map tile from a dataset."""
             tms = self.supported_tms.get(TileMatrixSetId)
 
-            with xarray_open_dataset(
+            with self.reader(
                 url,
+                variable=variable,
                 group=z if multiscale else None,
                 reference=reference,
                 decode_times=decode_times,
-            ) as ds:
-                da = get_variable(
-                    ds, variable=variable, drop_dim=drop_dim, time_slice=time_slice
+                drop_dim=drop_dim,
+                time_slice=time_slice,
+                tms=tms,
+            ) as src_dst:
+                image = src_dst.tile(
+                    x,
+                    y,
+                    z,
+                    tilesize=scale * 256,
                 )
-
-                with self.reader(da, tms=tms) as dst:
-                    image = dst.tile(
-                        x,
-                        y,
-                        z,
-                        tilesize=scale * 256,
-                    )
 
             if post_process:
                 image = post_process(image)
@@ -304,17 +220,17 @@ class XarrayTilerFactory(BaseTilerFactory):
             group: Optional[int] = Query(
                 None, description="Select a specific Zarr Group (Zoom Level)."
             ),
-            multiscale: Optional[bool] = Query(  # noqa
+            multiscale: bool = Query(  # noqa
                 False,
                 title="multiscale",
                 description="Whether the dataset has multiscale groups (Zoom levels)",
             ),
-            reference: Optional[bool] = Query(
+            reference: bool = Query(
                 False,
                 title="reference",
                 description="Whether the src_path is a kerchunk reference",
             ),
-            decode_times: Optional[bool] = Query(
+            decode_times: bool = Query(
                 True, title="decode_times", description="Whether to decode times"
             ),
             variable: str = Query(..., description="Xarray Variable"),
@@ -380,26 +296,25 @@ class XarrayTilerFactory(BaseTilerFactory):
 
             tms = self.supported_tms.get(TileMatrixSetId)
 
-            with xarray_open_dataset(
+            with self.reader(
                 url,
+                variable=variable,
                 group=group,
                 reference=reference,
                 decode_times=decode_times,
-            ) as ds:
-                da = get_variable(ds, variable=variable)
-
-                with self.reader(da, tms=tms) as src_dst:
-                    # see https://github.com/corteva/rioxarray/issues/645
-                    minx, miny, maxx, maxy = zip(
-                        [-180, -90, 180, 90], list(src_dst.geographic_bounds)
-                    )
-                    bounds = [max(minx), max(miny), min(maxx), min(maxy)]
-                    return {
-                        "bounds": bounds,
-                        "minzoom": minzoom if minzoom is not None else src_dst.minzoom,
-                        "maxzoom": maxzoom if maxzoom is not None else src_dst.maxzoom,
-                        "tiles": [tiles_url],
-                    }
+                tms=tms,
+            ) as src_dst:
+                # see https://github.com/corteva/rioxarray/issues/645
+                minx, miny, maxx, maxy = zip(
+                    [-180, -90, 180, 90], list(src_dst.geographic_bounds)
+                )
+                bounds = [max(minx), max(miny), min(maxx), min(maxy)]
+                return {
+                    "bounds": bounds,
+                    "minzoom": minzoom if minzoom is not None else src_dst.minzoom,
+                    "maxzoom": maxzoom if maxzoom is not None else src_dst.maxzoom,
+                    "tiles": [tiles_url],
+                }
 
         @self.router.get("/map", response_class=HTMLResponse)
         @self.router.get("/{TileMatrixSetId}/map", response_class=HTMLResponse)
