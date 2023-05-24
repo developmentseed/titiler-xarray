@@ -14,7 +14,7 @@ from titiler.core.middleware import (
     TotalTimeMiddleware,
 )
 from titiler.xarray import __version__ as titiler_version
-from titiler.xarray.factory import XarrayTilerFactory
+from titiler.xarray.factory import ZarrTilerFactory
 from titiler.xarray.settings import ApiSettings
 
 logging.getLogger("botocore.credentials").disabled = True
@@ -31,7 +31,7 @@ app = FastAPI(
 
 ###############################################################################
 # Tiles endpoints
-xarray_factory = XarrayTilerFactory()
+xarray_factory = ZarrTilerFactory()
 app.include_router(xarray_factory.router, tags=["Xarray Tiler API"])
 
 ###############################################################################
