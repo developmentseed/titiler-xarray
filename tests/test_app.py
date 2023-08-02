@@ -4,7 +4,7 @@ import os
 DATA_DIR = "tests/fixtures"
 test_zarr_store = os.path.join(DATA_DIR, "test_zarr_store.zarr")
 reference = os.path.join(DATA_DIR, "reference.json")
-
+test_misordered_zarr_store = os.path.join(DATA_DIR, "test_zarr_store_misordered_coords.zarr")
 
 def test_get_variables_reference(app):
     # With reference file
@@ -94,6 +94,14 @@ def test_get_tile(app):
     response = app.get(
         "/tiles/0/0/0.png",
         params={"url": test_zarr_store, "variable": "CDD0", "decode_times": False},
+    )
+    assert response.status_code == 200
+    assert response.headers["Content-Type"] == "image/png"
+
+def test_get_misordered_tile(app):
+    response = app.get(
+        "/tiles/0/0/0.png",
+        params={"url": test_misordered_zarr_store, "variable": "CDD0", "decode_times": False},
     )
     assert response.status_code == 200
     assert response.headers["Content-Type"] == "image/png"

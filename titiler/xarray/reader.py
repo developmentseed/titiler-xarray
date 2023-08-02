@@ -66,6 +66,8 @@ def get_variable(
     # Make sure we have a valid CRS
     crs = da.rio.crs or "epsg:4326"
     da.rio.write_crs(crs, inplace=True)
+    if da.dims != ("time", "y", "x"):
+        da = da.transpose("time", "y", "x")
 
     # TODO - address this time_slice issue
     if "time" in da.dims:

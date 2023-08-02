@@ -47,5 +47,18 @@ ds = xr.Dataset(
     coords={"time": time, "lat": lat, "lon": lon},
 )
 
+CDD0_misordered = xr.DataArray(
+    np.random.rand(time_dim, lon_dim, lat_dim).astype(np.uint8),
+    dims=("time", "lon", "lat"),
+    name="CDD0",
+)
+ds_misorderd_coords = xr.Dataset(
+    {
+        "CDD0": CDD0_misordered.chunk(chunk_size)
+    },
+    coords={"time": time, "lon": lon, "lat": lat},
+)
+
 # Save dataset to a local Zarr store
 ds.to_zarr("fixtures/test_zarr_store.zarr", mode="w")
+ds.to_zarr("fixtures/test_zarr_store_misordered_coords.zarr", mode="w")
