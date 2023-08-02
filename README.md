@@ -80,7 +80,7 @@ An example of Cloud Stack is available for AWS
     STACK_STAGE=staging npm --prefix infrastructure/aws run cdk -- deploy titiler-xarray-staging
 
     # Deploy in specific region
-    AWS_DEFAULT_REGION=eu-central-1 AWS_REGION=eu-central-1 AWS_PROFILE=myprofile STACK_STAGE=staging  npm --prefix infrastructure/aws run cdk -- deploy titiler-xarray-staging
+    AWS_DEFAULT_REGION=us-west-2 AWS_REGION=us-west-2 AWS_PROFILE=myprofile STACK_STAGE=production npm --prefix infrastructure/aws run cdk -- deploy titiler-xarray-production
     ```
 
 
