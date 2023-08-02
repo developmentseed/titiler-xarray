@@ -61,4 +61,4 @@ ds_misorderd_coords = xr.Dataset(
 
 # Save dataset to a local Zarr store
 ds.to_zarr("fixtures/test_zarr_store.zarr", mode="w")
-ds.to_zarr("fixtures/test_zarr_store_misordered_coords.zarr", mode="w")
+ds_misorderd_coords.to_zarr("fixtures/test_zarr_store_misordered_coords.zarr", mode="w")
