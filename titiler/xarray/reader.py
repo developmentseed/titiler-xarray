@@ -19,6 +19,7 @@ def xarray_open_dataset(
     group: Optional[Any] = None,
     reference: Optional[bool] = False,
     decode_times: Optional[bool] = True,
+    chunks: Optional[Dict[str, int]] = {},
 ) -> xarray.Dataset:
     """Open dataset."""
     xr_open_args: Dict[str, Any] = {
@@ -26,6 +27,8 @@ def xarray_open_dataset(
         "decode_coords": "all",
         "decode_times": decode_times,
         "consolidated": True,
+        # chunks={} loads the dataset with dask using engine preferred chunks if exposed by the backend
+        "chunks": chunks
     }
     if group:
         xr_open_args["group"] = group
