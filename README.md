@@ -26,7 +26,7 @@ Tests use data generated locally by using `tests/fixtures/generate_test_*.py` sc
 To run all the tests:
 
 ```bash
-python -m pip install -e .["tests"]
+python -m pip install -e ".[tests]"
 python -m pytest --cov titiler.xarray --cov-report term-missing -s -vv
 ```
 
@@ -61,7 +61,7 @@ An example of Cloud Stack is available for AWS
     npm --prefix infrastructure/aws run cdk -- bootstrap
 
     # or to a specific region and or using AWS profile
-    AWS_DEFAULT_REGION=us-west-2 AWS_REGION=us-west-2 AWS_PROFILE=myprofile npm --prefix infrastructure/aws run cdk -- bootstrap
+    AWS_DEFAULT_REGION=us-west-2 AWS_REGION=us-west-2 AWS_PROFILE=CHANGE_ME npm --prefix infrastructure/aws run cdk -- bootstrap
     ```
 
 2. Update settings
@@ -80,7 +80,7 @@ An example of Cloud Stack is available for AWS
     STACK_STAGE=staging npm --prefix infrastructure/aws run cdk -- deploy titiler-xarray-staging
 
     # Deploy in specific region
-    AWS_DEFAULT_REGION=eu-central-1 AWS_REGION=eu-central-1 AWS_PROFILE=myprofile STACK_STAGE=staging  npm --prefix infrastructure/aws run cdk -- deploy titiler-xarray-staging
+AWS_DEFAULT_REGION=us-west-2 AWS_REGION=s-west-2 AWS_PROFILE=smce-veda STACK_STAGE=staging  npm --prefix infrastructure/aws run cdk -- deploy titiler-xarray
     ```
 
 
