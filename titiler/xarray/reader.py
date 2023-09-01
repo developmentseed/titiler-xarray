@@ -22,6 +22,8 @@ def xarray_open_dataset(
     chunks: Optional[Dict[str, int]] = None,
 ) -> xarray.Dataset:
     """Open dataset."""
+    if chunks is None:
+        chunks = {}
     xr_open_args: Dict[str, Any] = {
         "engine": "zarr",
         "decode_coords": "all",
