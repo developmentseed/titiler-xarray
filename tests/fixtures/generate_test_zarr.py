@@ -53,9 +53,7 @@ CDD0_misordered = xr.DataArray(
     name="CDD0",
 )
 ds_misorderd_coords = xr.Dataset(
-    {
-        "CDD0": CDD0_misordered.chunk(chunk_size)
-    },
+    {"CDD0": CDD0_misordered.chunk(chunk_size)},
     coords={"time": time, "lon": lon, "lat": lat},
 )
 
