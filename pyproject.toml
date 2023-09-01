@@ -34,7 +34,8 @@ dependencies = [
     "aiohttp",
     "titiler.core>=0.11.7,<0.12",
     "starlette-cramjam>=0.3,<0.4",
-    "python-dotenv"
+    "python-dotenv",
+    "asgi-server-timing-middleware@git+https://github.com/sm-Fifteen/asgi-server-timing-middleware",
 ]
 
 [project.optional-dependencies]
