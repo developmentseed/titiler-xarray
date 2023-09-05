@@ -35,7 +35,6 @@ dependencies = [
     "titiler.core>=0.11.7,<0.12",
     "starlette-cramjam>=0.3,<0.4",
     "python-dotenv",
-    "asgi-server-timing-middleware@git+https://github.com/sm-Fifteen/asgi-server-timing-middleware",
 ]
 
 [project.optional-dependencies]
@@ -44,9 +43,16 @@ test = [
     "pytest-cov",
     "pytest-asyncio",
     "httpx",
+    "yappi",
 ]
 dev = [
     "pre-commit"
+]
+debug = [
+    "yappi"
+]
+server = [
+    "uvicorn"
 ]
 
 [project.urls]

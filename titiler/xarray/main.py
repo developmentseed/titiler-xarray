@@ -2,10 +2,8 @@
 
 import logging
 
-# For ServerTimingMiddleware
 import rioxarray
 import xarray
-from asgi_server_timing import ServerTimingMiddleware
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette_cramjam.middleware import CompressionMiddleware
@@ -19,6 +17,7 @@ from titiler.core.middleware import (
 )
 from titiler.xarray import __version__ as titiler_version
 from titiler.xarray.factory import ZarrTilerFactory
+from titiler.xarray.middleware import ServerTimingMiddleware
 from titiler.xarray.settings import ApiSettings
 
 logging.getLogger("botocore.credentials").disabled = True
@@ -81,14 +80,13 @@ app.add_middleware(
 if api_settings.debug:
     app.add_middleware(LoggerMiddleware, headers=True, querystrings=True)
     app.add_middleware(TotalTimeMiddleware)
-
-app.add_middleware(
-    ServerTimingMiddleware,
-    calls_to_track={
-        "1-xarray-open_dataset": (xarray.open_dataset,),
-        "2-rioxarray-reproject": (rioxarray.raster_array.RasterArray.reproject,),
-    },
-)
+    app.add_middleware(
+        ServerTimingMiddleware,
+        calls_to_track={
+            "1-xarray-open_dataset": (xarray.open_dataset,),
+            "2-rioxarray-reproject": (rioxarray.raster_array.RasterArray.reproject,),
+        },
+    )
 
 
 @app.get(
