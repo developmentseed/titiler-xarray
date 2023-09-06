@@ -14,6 +14,11 @@ def test_get_variables_reference(app):
     )
     assert response.status_code == 200
     assert response.json() == ["value"]
+    assert response.headers["server-timing"]
+    timings = response.headers["server-timing"].split(",")
+    assert len(timings) == 2
+    assert timings[0].startswith("total;dur=")
+    assert timings[1].lstrip().startswith("1-xarray-open_dataset;dur=")
 
 
 def test_get_variables(app):
@@ -88,6 +93,11 @@ def test_get_tile_reference(app):
     )
     assert response.status_code == 200
     assert response.headers["Content-Type"] == "image/png"
+    assert response.headers["server-timing"]
+    timings = response.headers["server-timing"].split(",")
+    assert len(timings) == 3
+    assert timings[1].lstrip().startswith("1-xarray-open_dataset;dur=")
+    assert timings[2].lstrip().startswith("2-rioxarray-reproject;dur=")
 
 
 def test_get_tile(app):
