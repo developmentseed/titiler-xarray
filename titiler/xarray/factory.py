@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from typing import Dict, List, Literal, Optional, Tuple, Type
 from urllib.parse import urlencode
+from starlette.templating import Jinja2Templates
+import jinja2
 
 from fastapi import Depends, Path, Query
 from rio_tiler.models import Info
@@ -384,7 +386,11 @@ class ZarrTilerFactory(BaseTilerFactory):
                 tilejson_url += f"?{urlencode(request.query_params._list)}"
 
             tms = self.supported_tms.get(TileMatrixSetId)
-            return self.templates.TemplateResponse(
+            templates = Jinja2Templates(
+                directory="",
+                loader=jinja2.ChoiceLoader([jinja2.PackageLoader(__package__, ".")]),
+            )
+            return templates.TemplateResponse(
                 name="map.html",
                 context={
                     "request": request,
