@@ -32,6 +32,7 @@ class StackSettings(pydantic.BaseSettings):
     # The maximum of concurrent executions you want to reserve for the function.
     # Default: - No specific limit - account limit.
     max_concurrent: Optional[int]
+    alarm_email: Optional[str] = ""
 
     class Config:
         """model config"""

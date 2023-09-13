@@ -85,29 +85,30 @@ class LambdaStack(Stack):
         )
 
         # Create an SNS Topic
-        topic = sns.Topic(self, "DevTitilerXarray500Errors",
-                          display_name="Dev TitilerXarray Gateway 500 Errors",
-                          topic_name="DevTitilerXarray500Errors")
-        # Subscribe email to the topic
-        email_address = "aimee@developmentseed.org"
-        topic.add_subscription(subscriptions.EmailSubscription(email_address))
+        if settings.alarm_email:
+            topic = sns.Topic(self, "DevTitilerXarray500Errors",
+                            display_name="Dev TitilerXarray Gateway 500 Errors",
+                            topic_name="DevTitilerXarray500Errors")
+            # Subscribe email to the topic
+            email_address = settings.alarm_email
+            topic.add_subscription(subscriptions.EmailSubscription(email_address))
 
-        # Create CloudWatch Alarm
-        alarm = cloudwatch.Alarm(self, "MyAlarm",
-                         metric=cloudwatch.Metric(
-                             namespace="AWS/ApiGateway",
-                             metric_name="5XXError",
-                             dimensions_map={
-                                 "ApiName": f"{id}-endpoint"
-                             },
-                             period=Duration.minutes(1)),
-                         evaluation_periods=1,
-                         threshold=1,
-                         alarm_description="Alarm if 500 errors are detected",
-                         alarm_name="ApiGateway500Alarm",
-                         actions_enabled=True
-                         )
-        alarm.add_alarm_action(cloudwatch_actions.SnsAction(topic))
+            # Create CloudWatch Alarm
+            alarm = cloudwatch.Alarm(self, "MyAlarm",
+                            metric=cloudwatch.Metric(
+                                namespace="AWS/ApiGateway",
+                                metric_name="5XXError",
+                                dimensions_map={
+                                    "ApiName": f"{id}-endpoint"
+                                },
+                                period=Duration.minutes(1)),
+                            evaluation_periods=1,
+                            threshold=1,
+                            alarm_description="Alarm if 500 errors are detected",
+                            alarm_name="ApiGateway500Alarm",
+                            actions_enabled=True
+                            )
+            alarm.add_alarm_action(cloudwatch_actions.SnsAction(topic))
         CfnOutput(self, "Endpoint", value=api.url)
 
 
