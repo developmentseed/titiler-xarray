@@ -61,7 +61,7 @@
             }
 
             /* Button styling */
-            #show-popup-btn, #go-btn, #close-popup-btn, #get-stats-btn {
+            #show-popup-btn, #go-btn, #close-popup-btn, #get-histogram-btn, #get-vars-btn {
                 background-color: #007bff;
                 color: white;
                 border: none;
@@ -71,12 +71,12 @@
                 cursor: pointer;
             }
 
-            #show-popup-btn:hover, #go-btn:hover, #close-popup-btn:hover, #get-stats-btn:hover {
+            #show-popup-btn:hover, #go-btn:hover, #close-popup-btn:hover, #get-histogram-btn:hover {
                 background-color: #0056b3;
             }
 
-            /* Stats container */
-            #stats-container {
+            /* histogram container */
+            #histogram-container {
                 margin-top: 20px;
                 text-align: left;
                 /* border: 1px solid #ccc; */
@@ -93,21 +93,33 @@
         <!-- Popup Container -->
         <div id="popup-container">
             <div id="popup-content">
+                
+                <!-- URL input -->
                 <h2>Enter URL</h2>
                 <input type="text" id="url-input" placeholder="Enter URL">
                 <br />
+
+                <!-- Variable input -->
+                <button id="get-vars-btn">Get Variables</button>
+                <div id="vars-container">
+                </div>                   
                 <input type="text" id="variable-input" placeholder="Enter Variable">
                 <br />
+
+                <!-- Get histogram -->
+                <button id="get-histogram-btn">Get histogram</button>
+                <div id="histogram-container">
+                    <canvas id="histogram" width="600" height="600"></canvas>
+                </div>                
                 <input type="text" id="rescale-input" placeholder="Rescale, ex. 1,100 (optional)">
                 <br />
+
+                <!-- Colormap dropdown -->
                 <select id="colormap-dropdown"></select>
                 <br />
-                <button id="go-btn">Go</button>
-                <button id="get-stats-btn">Get stats</button>
-                <div id="stats-container">
-                    <canvas id="histogram" width="600" height="600"></canvas>
 
-                </div>
+                <!-- Go button -->
+                <button id="go-btn">Go</button>
             </div>
         </div>
 
@@ -121,29 +133,28 @@
                     option.value = item;
                     option.text = item;
                     colormapDropdown.add(option);
-                });                
-                // Go button action
-                document.getElementById("go-btn").addEventListener("click", function() {
-                    var urlValue = document.getElementById("url-input").value;
-                    var variableValue = document.getElementById("variable-input").value;
-                    var rescaleValue = document.getElementById("rescale-input").value;
-                    var colormapValue = document.getElementById("colormap-dropdown").value;
-                    if (urlValue) {
-                        // Redirect to the map URL with the input value as a parameter
-                        var href = `map?url=${encodeURIComponent(urlValue)}&variable=${encodeURIComponent(variableValue)}`;
-                        if (rescaleValue) {
-                            href += `&rescale=${encodeURIComponent(rescaleValue)}`;
-                        }
-                        if (colormapValue) {
-                            href += `&colormap_name=${encodeURIComponent(colormapValue)}`;
-                        }
-                        window.location.href = href;
-                    }
                 });
 
-                // Get stats button action
-                document.getElementById("get-stats-btn").addEventListener("click", function() {
-                    //document.getElementById('stats-container').innerHTML = '';
+                // Get vars button action
+                document.getElementById("get-vars-btn").addEventListener("click", function() {
+                    document.getElementById('vars-container').innerHTML = '';
+                    var urlValue = document.getElementById("url-input").value;
+                    // Fetch data from a URL
+                    fetch(`/variables?url=${encodeURIComponent(urlValue)}`) // Replace with the actual URL
+                        .then(response => response.json()) // Assuming server responds with JSON
+                        .then(data => {
+                            // Create a new div and add the fetched data
+                            var newDiv = document.createElement("div");
+                            newDiv.textContent = JSON.stringify(data, null, 2); // Formatting the JSON data for demonstration
+                            document.getElementById("vars-container").appendChild(newDiv);
+                        })
+                        .catch((error) => {
+                            console.error('Error fetching data:', error);
+                        });
+                });
+
+                // Get histogram button action
+                document.getElementById("get-histogram-btn").addEventListener("click", function() {
 
                     var urlValue = document.getElementById("url-input").value;
                     var variableValue = document.getElementById("variable-input").value;                    
@@ -184,11 +195,31 @@
                                     x += 50;  // Increment x position for the next label
                             });
 
-                            //document.getElementById("stats-container").appendChild(newDiv);
+                            //document.getElementById("histogram-container").appendChild(newDiv);
                         })
                         .catch((error) => {
                             console.error('Error fetching data:', error);
                         });
+                });
+                
+                
+                // Go button action
+                document.getElementById("go-btn").addEventListener("click", function() {
+                    var urlValue = document.getElementById("url-input").value;
+                    var variableValue = document.getElementById("variable-input").value;
+                    var rescaleValue = document.getElementById("rescale-input").value;
+                    var colormapValue = document.getElementById("colormap-dropdown").value;
+                    if (urlValue) {
+                        // Redirect to the map URL with the input value as a parameter
+                        var href = `map?url=${encodeURIComponent(urlValue)}&variable=${encodeURIComponent(variableValue)}`;
+                        if (rescaleValue) {
+                            href += `&rescale=${encodeURIComponent(rescaleValue)}`;
+                        }
+                        if (colormapValue) {
+                            href += `&colormap_name=${encodeURIComponent(colormapValue)}`;
+                        }
+                        window.location.href = href;
+                    }
                 });
 
             </script>
