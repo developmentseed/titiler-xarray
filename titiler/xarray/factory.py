@@ -187,7 +187,6 @@ class ZarrTilerFactory(BaseTilerFactory):
 
             if colormap:
                 image = image.apply_colormap(colormap)
-
             if not format:
                 format = ImageType.jpeg if image.mask.all() else ImageType.png
 
@@ -312,6 +311,7 @@ class ZarrTilerFactory(BaseTilerFactory):
                     [-180, -90, 180, 90], list(src_dst.geographic_bounds)
                 )
                 bounds = [max(minx), max(miny), min(maxx), min(maxy)]
+
                 return {
                     "bounds": bounds,
                     "minzoom": minzoom if minzoom is not None else src_dst.minzoom,
@@ -329,10 +329,16 @@ class ZarrTilerFactory(BaseTilerFactory):
         def histogram(
             url: str = Query(..., description="Dataset URL"),
             variable: str = Query(..., description="Variable"),
+            reference: Optional[bool] = Query(
+                False,
+                title="reference",
+                description="Whether the src_path is a kerchunk reference",
+            ),
         ):
             with self.reader(
                 url,
                 variable=variable,
+                reference=reference
             ) as src_dst:           
                 boolean_mask = ~np.isnan(src_dst.input)
                 data_values = src_dst.input.values[boolean_mask]

@@ -39,26 +39,25 @@
                 var crs = new L.Proj.CRS(
                     '{{ tms.crs.srs }}',
                     '{{ tms.crs.to_proj4() }}', {
-                    origin: [{{ tms.xy_bbox.left }}, {{ tms.xy_bbox.top }}],
-                    bounds: L.bounds(
-                    L.Point({{ tms.xy_bbox.left}}, {{ tms.xy_bbox.bottom }}),
-                    L.Point({{ tms.xy_bbox.right}}, {{ tms.xy_bbox.top }})
-                    ),
-                    resolutions: {{ resolutions|safe }},
-                }
+                        origin: [{{ tms.xy_bbox.left }}, {{ tms.xy_bbox.top }}],
+                        bounds: L.bounds(
+                            L.Point({{ tms.xy_bbox.left}}, {{ tms.xy_bbox.bottom }}),
+                            L.Point({{ tms.xy_bbox.right}}, {{ tms.xy_bbox.top }})
+                        ),
+                        resolutions: {{ resolutions|safe }},
+                    }
                 );
 
-
                 var map = L.map('map', {
-                crs: crs,
-                minZoom: {{ tms.minzoom }},
-                maxZoom: {{ tms.maxzoom }}
+                    crs: crs,
+                    minZoom: 0,
+                    maxZoom: 18
                 });
 
                 if ("{{ tms.identifier }}" === "WebMercatorQuad") {
-                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                }).addTo(map);
+                    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    }).addTo(map);
                 }
 
                 fetch('{{ tilejson_endpoint|safe }}')
@@ -73,19 +72,19 @@
                     let geo;
                     // handle files that span accross dateline
                     if (bounds[0] > bounds[2]) {
-                    console.log("bounds[0] > bounds[2]")
-                    geo = {
-                        "type": "FeatureCollection",
-                        "features": [
-                        bboxPolygon([-180, bounds[1], bounds[2], bounds[3]]),
-                        bboxPolygon([bounds[0], bounds[1], 180, bounds[3]]),
-                        ]
-                    }
+                        console.log("bounds[0] > bounds[2]")
+                        geo = {
+                            "type": "FeatureCollection",
+                            "features": [
+                            bboxPolygon([-180, bounds[1], bounds[2], bounds[3]]),
+                            bboxPolygon([bounds[0], bounds[1], 180, bounds[3]]),
+                            ]
+                        }
                     } else {
-                    geo = {
-                        "type": "FeatureCollection",
-                        "features": [bboxPolygon(bounds)]
-                    }
+                        geo = {
+                            "type": "FeatureCollection",
+                            "features": [bboxPolygon(bounds)]
+                        }
                     }
 
                     var aoi = L.geoJSON(geo, {
@@ -95,20 +94,20 @@
 
                     // Bounds crossing dateline
                     if (bounds[0] > bounds[2]) {
-                    bounds[0] = bounds[0] - 360
+                        bounds[0] = bounds[0] - 360
                     }
                     var left = bounds[0],
-                    bottom = bounds[1],
-                    right = bounds[2],
-                    top = bounds[3];
-
+                        bottom = bounds[1],
+                        right = bounds[2],
+                        top = bounds[3];
                     L.tileLayer(
-                    data.tiles[0], {
-                        minZoom: data.minzoom,
-                        maxNativeZoom: data.maxzoom,
-                        bounds: L.latLngBounds([bottom, left], [top, right]),
-                    }
+                        data.tiles[0], {
+                            minZoom: data.minzoom,
+                            maxNativeZoom: data.maxzoom,
+                            bounds: L.latLngBounds([bottom, left], [top, right]),
+                        }
                     ).addTo(map);
+                    map.setView([0, 0], 2);
                 })
                 .catch(err => {
                     console.warn(err)
