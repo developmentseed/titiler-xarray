@@ -47,11 +47,11 @@
                         resolutions: {{ resolutions|safe }},
                     }
                 );
-
+                const maxZoom = 18;
                 var map = L.map('map', {
                     crs: crs,
                     minZoom: 0,
-                    maxZoom: 18
+                    maxZoom: maxZoom
                 });
 
                 if ("{{ tms.identifier }}" === "WebMercatorQuad") {
@@ -100,10 +100,11 @@
                         bottom = bounds[1],
                         right = bounds[2],
                         top = bounds[3];
+
                     L.tileLayer(
                         data.tiles[0], {
                             minZoom: data.minzoom,
-                            maxNativeZoom: data.maxzoom,
+                            maxNativeZoom: maxZoom,
                             bounds: L.latLngBounds([bottom, left], [top, right]),
                         }
                     ).addTo(map);
