@@ -3,13 +3,14 @@
 from dataclasses import dataclass
 from typing import Dict, List, Literal, Optional, Tuple, Type
 from urllib.parse import urlencode
-from starlette.templating import Jinja2Templates
-import jinja2
 
+import jinja2
+import numpy as np
 from fastapi import Depends, Path, Query
 from rio_tiler.models import Info
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, Response
+from starlette.templating import Jinja2Templates
 
 from titiler.core.dependencies import RescalingParams
 from titiler.core.factory import BaseTilerFactory, img_endpoint_params
@@ -18,7 +19,6 @@ from titiler.core.resources.enums import ImageType
 from titiler.core.resources.responses import JSONResponse
 from titiler.xarray.reader import ZarrReader
 
-import numpy as np
 
 @dataclass
 class ZarrTilerFactory(BaseTilerFactory):
@@ -319,7 +319,6 @@ class ZarrTilerFactory(BaseTilerFactory):
                     "tiles": [tiles_url],
                 }
 
-
         @self.router.get(
             "/histogram",
             response_class=JSONResponse,
@@ -329,22 +328,20 @@ class ZarrTilerFactory(BaseTilerFactory):
         def histogram(
             url: str = Query(..., description="Dataset URL"),
             variable: str = Query(..., description="Variable"),
-            reference: Optional[bool] = Query(
+            reference: bool = Query(
                 False,
                 title="reference",
                 description="Whether the src_path is a kerchunk reference",
             ),
         ):
-            with self.reader(
-                url,
-                variable=variable,
-                reference=reference
-            ) as src_dst:           
+            with self.reader(url, variable=variable, reference=reference) as src_dst:
                 boolean_mask = ~np.isnan(src_dst.input)
                 data_values = src_dst.input.values[boolean_mask]
                 counts, values = np.histogram(data_values, bins=10)
                 counts, values = counts.tolist(), values.tolist()
-                buckets = list(zip(values, [values[i+1] for i in range(len(values)-1)]))
+                buckets = list(
+                    zip(values, [values[i + 1] for i in range(len(values) - 1)])
+                )
                 hist_dict = []
                 for idx, bucket in enumerate(buckets):
                     hist_dict.append({"bucket": bucket, "value": counts[idx]})
@@ -375,7 +372,9 @@ class ZarrTilerFactory(BaseTilerFactory):
             decode_times: Optional[bool] = Query(  # noqa
                 True, title="decode_times", description="Whether to decode times"
             ),
-            variable: Optional[str] = Query(None, description="Xarray Variable"),  # noqa
+            variable: Optional[str] = Query(
+                None, description="Xarray Variable"
+            ),  # noqa
             drop_dim: Optional[str] = Query(
                 None, description="Dimension to drop"
             ),  # noqa
@@ -414,7 +413,7 @@ class ZarrTilerFactory(BaseTilerFactory):
             templates = Jinja2Templates(
                 directory="",
                 loader=jinja2.ChoiceLoader([jinja2.PackageLoader(__package__, ".")]),
-            )            
+            )
             if url:
                 tilejson_url = self.url_for(
                     request, "tilejson_endpoint", TileMatrixSetId=TileMatrixSetId
