@@ -55,7 +55,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: deployment/aws
+        working-directory: infrastructure/aws
 
     steps:
       - uses: actions/checkout@v3
@@ -73,7 +73,7 @@ jobs:
           node-version: 18
 
       - name: Install cdk
-        run: npm install -g
+        run: npm install -g aws-cdk
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -83,11 +83,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r infrastructure/aws/requirements-cdk.txt
+          python -m pip install -r requirements-cdk.txt
 
       # Build and Deploy CDK application
       - name: Build & Deploy
-        run: npm --prefix infrastructure/aws run cdk -- deploy titiler-xarray-production
+        run: npm run cdk -- deploy titiler-xarray-production
         env:
           TITILER_XARRAY_PYTHONWARNINGS: ignore
           TITILER_XARRAY_DEBUG: True
