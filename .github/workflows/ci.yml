@@ -52,7 +52,7 @@ jobs:
   deploy:
     needs: [tests]
     runs-on: ubuntu-latest
-    if: startsWith(github.event.ref, 'main') || startsWith(github.event.ref, 'feat/update-map')
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/feat/update-map'
 
     defaults:
       run:
