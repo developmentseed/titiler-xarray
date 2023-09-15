@@ -21,41 +21,45 @@
                 width: 100%;
                 height: 100%;
                 background-color: rgba(0, 0, 0, 0.7);
-            }
-
+            } 
+    
+            /* Container for the popup box */
             .popup-shown {
                 display: flex;
                 justify-content: center;
                 align-items: center;
             }
 
+            /* The popup box itself */
+            #popup-content {
+                background-color: white;
+                padding: 30px;
+                border-radius: 15px;
+                box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+                width: 400px;
+                height: 300px;
+                margin-top: 20px;
+                z-index: 1000;
+                overflow-x: hidden;
+                overflow-y: scroll;             
+            }
+
+            /* Close button */
             .close {
-                position: absolute;
-                top: 20px;
-                right: 30px;
                 font-size: 30px;
                 cursor: pointer;
-            }
-
-            #popup {
-                position: absolute;
-                z-index: 1000;
-                width: 300px;
-                height: auto;
-                top: 10%;
-                left: 40%;
-                padding: 20px;
-                background: white;
-                border-radius: 15px;  /* Rounded corners */
-                box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);  /* Drop shadow */
-            }
-
+                z-index: 2000;
+                position: relative;
+                bottom: 140px;
+                left: 430px;
+            }                 
         </style>
     </head>
     <body>
         <div id="popup" class="popup-hidden">
             <span class="close" id="close-popup">&times;</span>
-            <div id="popup-content"></div>
+            <div id="popup-content">
+            </div>
           </div>
         <div id='map' class="hidden"></div>
 
