@@ -179,7 +179,6 @@
                                     return JSON.parse(text);
                                 };
                                 readStream().then(errorText => {
-                                    debugger;
                                     popupContent.innerHTML = `Error fetching <a href=${tileSrc}>${tileSrc}</a>:<br /><br />${errorText.detail}`;
                                     popup.classList.add("popup-shown");
                                     popup.classList.remove("popup-hidden");
