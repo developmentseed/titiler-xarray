@@ -5,9 +5,13 @@ from typing import Any, Dict, List, Optional
 
 from aws_cdk import App, CfnOutput, Duration, Stack, Tags
 from aws_cdk import aws_apigatewayv2_alpha as apigw
+from aws_cdk import aws_cloudwatch as cloudwatch
+from aws_cdk import aws_cloudwatch_actions as cloudwatch_actions
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda
 from aws_cdk import aws_logs as logs
+from aws_cdk import aws_sns as sns
+from aws_cdk import aws_sns_subscriptions as subscriptions
 from aws_cdk.aws_apigatewayv2_integrations_alpha import HttpLambdaIntegration
 from aws_cdk import (
     aws_cloudwatch as cloudwatch,
@@ -86,28 +90,32 @@ class LambdaStack(Stack):
 
         # Create an SNS Topic
         if settings.alarm_email:
-            topic = sns.Topic(self, "DevTitilerXarray500Errors",
-                            display_name="Dev TitilerXarray Gateway 500 Errors",
-                            topic_name="DevTitilerXarray500Errors")
+            topic = sns.Topic(
+                self,
+                "DevTitilerXarray500Errors",
+                display_name="Dev TitilerXarray Gateway 500 Errors",
+                topic_name="DevTitilerXarray500Errors",
+            )
             # Subscribe email to the topic
             email_address = settings.alarm_email
             topic.add_subscription(subscriptions.EmailSubscription(email_address))
 
             # Create CloudWatch Alarm
-            alarm = cloudwatch.Alarm(self, "MyAlarm",
-                            metric=cloudwatch.Metric(
-                                namespace="AWS/ApiGateway",
-                                metric_name="5XXError",
-                                dimensions_map={
-                                    "ApiName": f"{id}-endpoint"
-                                },
-                                period=Duration.minutes(1)),
-                            evaluation_periods=1,
-                            threshold=1,
-                            alarm_description="Alarm if 500 errors are detected",
-                            alarm_name="ApiGateway500Alarm",
-                            actions_enabled=True
-                            )
+            alarm = cloudwatch.Alarm(
+                self,
+                "MyAlarm",
+                metric=cloudwatch.Metric(
+                    namespace="AWS/ApiGateway",
+                    metric_name="5XXError",
+                    dimensions_map={"ApiName": f"{id}-endpoint"},
+                    period=Duration.minutes(1),
+                ),
+                evaluation_periods=1,
+                threshold=1,
+                alarm_description="Alarm if 500 errors are detected",
+                alarm_name="ApiGateway500Alarm",
+                actions_enabled=True,
+            )
             alarm.add_alarm_action(cloudwatch_actions.SnsAction(topic))
         CfnOutput(self, "Endpoint", value=api.url)
 
