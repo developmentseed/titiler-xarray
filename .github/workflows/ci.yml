@@ -5,7 +5,6 @@ on:
   push:
     branches:
     - main
-    - feat/add-5xx-alarm
     tags:
     - '*'
     paths:
