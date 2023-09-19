@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset='utf-8' />
+        <title>TiTiler Map Viewer</title>
+        <meta name='viewport'
+            content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+        <link rel="stylesheet"
+            href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+        <script src="https://unpkg.com/proj4@2.3.14/dist/proj4.js"></script>
+        <script src="https://unpkg.com/proj4leaflet@1.0.2/src/proj4leaflet.js"></script>
+        <style>
+            body {
+                font-family: sans-serif;
+                margin:0;
+                padding:0;
+                width:100%;
+                height:100%;
+                background-color: #e5e5e5;
+            }
+            .hidden {
+              display: none;
+            }
+
+            /* General popup styles */
+            #popup-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0,0,0,0.7);
+                display: flex;
+                justify-content: center;
+            }
+
+            /* Updated content box */
+            #popup-content {
+                background-color: #fff;
+                width: 50%;
+                padding: 30px;
+                text-align: left;
+                border-radius: 12px;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                z-index: 1000;
+                overflow-y: scroll;
+            }
+
+            /* Input field styling */
+            #url-input, #variable-input, #rescale-input, #colormap-dropdown, #variable-select {
+                width: 80%;
+                padding: 10px;
+                margin: 10px 0;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+            }
+
+            #colormap-dropdown, #variable-select {
+                width: 84.5%;
+            }
+
+            /* Button styling */
+            #show-popup-btn, #go-btn, #close-popup-btn, #get-histogram-btn, #get-vars-btn {
+                background-color: #007bff;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                margin: 10px;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+
+            #show-popup-btn:hover, #go-btn:hover, #close-popup-btn:hover, #get-histogram-btn:hover {
+                background-color: #0056b3;
+            }
+
+            /* histogram container */
+            #histogram-container {
+                margin-top: 20px;
+                text-align: left;
+                /* border: 1px solid #ccc; */
+                padding: 10px;
+                border-radius: 4px;
+                overflow-y: auto;
+                max-height: 200px;
+            }
+            .spinner {
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+            }
+            .spinner:after {
+                content: " ";
+                display: block;
+                width: 20px;
+                height: 20px;
+                margin: 3px;
+                border-radius: 50%;
+                border: 3px solid #666;
+                border-color: #666 transparent #666 transparent;
+                animation: spinner 1.2s linear infinite;
+            }
+            @keyframes spinner {
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+        </style>
+    </head>
+    <body>
+
+        <!-- Popup Container -->
+        <div id="popup-container">
+            <div id="popup-content">
+                
+                <!-- URL input -->
+                <h2>Visualize Zarr</h2>
+                <h4>Step 1: Enter the URL of your Zarr store</h4>
+                <input type="text" id="url-input" placeholder="Enter URL">
+                <br />
+
+                <input type="checkbox" id="reference" name="reference">
+                <label for="reference">Is this a URL a reference file (i.e. <a href="https://fsspec.github.io/kerchunk">kerchunk</a>)?:</label>
+                <br />
+
+                <!-- Variable input -->
+                <h4>Step 2: Enter the variable you wish to visualize.</h4>
+                <p>If you already know the variable name, type it in the input box. Otherwise, click on the "Get Variables" button to populate a drop down.</p>
+                <button id="get-vars-btn">Get Variables</button>
+                <div id="loading-icon-variables" class="loading-icon" style="display: none;">
+                    <div class="spinner"></div>
+                </div>
+                <br />
+                <input type="text" id="variable-input" placeholder="Enter Variable">
+                <br />
+
+                <!-- Get histogram -->
+                <h4>Step 3: Enter the rescale values.</h4>
+                <p>By default, data values will be represented as they fall in the 0,255 RGB range. This won't work for most data. If data values are very small, ranging from 0 to 1 like many climate indices, you will see a big black box. Conversely, if most of your data is greater than 255, your data will appear white. It makes sense to rescale your data via the rescale parameter. If your data ranges from 0,1 that should be your rescale value.</p>
+                <p>You can enter the rescale value directly or click "Get histogram" to see a histogram of the data values.</p>           
+                <br />
+                <button id="get-histogram-btn">Get histogram</button>
+                <div id="loading-icon-histogram" class="loading-icon" style="display: none;">
+                    <div class="spinner"></div>
+                </div>                
+                <div id="histogram-container">
+                    <canvas id="histogram-canvas" width="600" height="0" ></canvas>
+                </div>
+                <input type="text" id="rescale-input" placeholder="Rescale, ex. 1,100 (optional)">           
+                <br />
+
+                <!-- Colormap dropdown -->
+                <h4>Step 4: Select a colormap.</h4>
+                <select id="colormap-dropdown"></select>
+                <br />
+
+                <!-- Go button -->
+                <button id="go-btn">Visualize on map</button>
+            </div>
+        </div>
+
+        <script type="text/javascript">
+                // Create colormaps dropdown
+                var colormaps = ["accent","accent_r","afmhot","afmhot_r","autumn","autumn_r","binary","binary_r","blues","blues_r","bone","bone_r","brbg","brbg_r","brg","brg_r","bugn","bugn_r","bupu","bupu_r","bwr","bwr_r","cfastie","cividis","cividis_r","cmrmap","cmrmap_r","cool","cool_r","coolwarm","coolwarm_r","copper","copper_r","cubehelix","cubehelix_r","dark2","dark2_r","flag","flag_r","gist_earth","gist_earth_r","gist_gray","gist_gray_r","gist_heat","gist_heat_r","gist_ncar","gist_ncar_r","gist_rainbow","gist_rainbow_r","gist_stern","gist_stern_r","gist_yarg","gist_yarg_r","gnbu","gnbu_r","gnuplot","gnuplot2","gnuplot2_r","gnuplot_r","gray","gray_r","greens","greens_r","greys","greys_r","hot","hot_r","hsv","hsv_r","inferno","inferno_r","jet","jet_r","magma","magma_r","name","nipy_spectral","nipy_spectral_r","ocean","ocean_r","oranges","oranges_r","orrd","orrd_r","paired","paired_r","pastel1","pastel1_r","pastel2","pastel2_r","pink","pink_r","piyg","piyg_r","plasma","plasma_r","prgn","prgn_r","prism","prism_r","pubu","pubu_r","pubugn","pubugn_r","puor","puor_r","purd","purd_r","purples","purples_r","rainbow","rainbow_r","rdbu","rdbu_r","rdgy","rdgy_r","rdpu","rdpu_r","rdylbu","rdylbu_r","rdylgn","rdylgn_r","reds","reds_r","rplumbo","schwarzwald","seismic","seismic_r","set1","set1_r","set2","set2_r","set3","set3_r","spectral","spectral_r","spring","spring_r","summer","summer_r","tab10","tab10_r","tab20","tab20_r","tab20b","tab20b_r","tab20c","tab20c_r","terrain","terrain_r","twilight","twilight_r","twilight_shifted","twilight_shifted_r","value","viridis","viridis_r","winter","winter_r","wistia","wistia_r","ylgn","ylgn_r","ylgnbu","ylgnbu_r","ylorbr","ylorbr_r","ylorrd","ylorrd_r"]
+                var colormapDropdown = document.getElementById("colormap-dropdown");
+
+                // Populate the dropdown
+                colormaps.forEach(function(item) {
+                    var option = document.createElement("option");
+                    option.value = item;
+                    option.text = item;
+                    colormapDropdown.add(option);
+                });
+
+                // Get vars button action
+                function replaceInputWithSelect(inputId, selectId, options) {
+                    // Step 1: Select the input element
+                    var inputElement = document.getElementById(inputId);
+
+                    // Step 2: Create the select element
+                    var selectElement = document.createElement("select");
+                    selectElement.id = selectId;
+
+                    options.forEach(function(optionText) {
+                        var option = document.createElement("option");
+                        option.value = optionText;
+                        option.text = optionText;
+                        selectElement.appendChild(option);
+                    });
+
+                    // Step 3: Replace the input with the select element
+                    var container = document.getElementById("popup-content");
+                    container.replaceChild(selectElement, inputElement);
+                }
+                document.getElementById("get-vars-btn").addEventListener("click", function() {
+                    const loadingIcon = document.getElementById('loading-icon-variables');
+                    loadingIcon.style.display = 'inline-block';
+                    var urlValue = document.getElementById("url-input").value;
+                    var reference = document.getElementById("reference").checked;
+
+                    // Fetch data from a URL
+                    fetch(`/variables?url=${encodeURIComponent(urlValue)}&reference=${reference}`) // Replace with the actual URL
+                        .then(response => response.json()) // Assuming server responds with JSON
+                        .then(data => {
+                            loadingIcon.style.display = 'none';
+                            var variableInput = document.getElementById("variable-input")
+                            if (variableInput) {
+                                replaceInputWithSelect("variable-input", "variable-select", data);
+                            } else {
+                                replaceInputWithSelect("variable-select", "variable-select", data);
+                            }
+                        })
+                        .catch((error) => {
+                            console.error('Error fetching data:', error);
+                        });
+                });
+
+                // Get histogram button action
+                function rescale(value, fromMin, fromMax, toMin, toMax) {
+                    if (fromMin === fromMax) {
+                        console.warn('Warning: Zero division error');
+                        return toMin;
+                    }
+                    return (value - fromMin) / (fromMax - fromMin) * (toMax - toMin) + toMin;
+                }
+
+                function getVariableInput() {
+                    var variableInput = document.getElementById("variable-input");
+                    if (variableInput) {
+                        return variableInput.value;
+                    } else {
+                        return document.getElementById("variable-select").value;
+                    }
+                }
+
+                document.getElementById("get-histogram-btn").addEventListener("click", function() {
+                    const loadingIcon = document.getElementById('loading-icon-histogram');
+                    loadingIcon.style.display = 'inline-block';
+                    var urlValue = document.getElementById("url-input").value;
+                    var reference = document.getElementById("reference").checked;
+                    var variableInput = getVariableInput();
+                    // Fetch data from a URL
+                    fetch(`/histogram?url=${encodeURIComponent(urlValue)}&variable=${encodeURIComponent(variableInput)}&reference=${reference}`) // Replace this with the actual URL
+                        .then(response => response.json()) // Assuming server responds with JSON
+                        .then(data => {
+                            loadingIcon.style.display = 'none';
+                            var canvasHeight = 200;
+                            const canvas = document.getElementById("histogram-canvas");
+                            const ctx = canvas.getContext("2d");
+                            canvas.height = canvasHeight;
+
+                            // Draw bars
+                            let x = 10;
+                            const yBottom = canvasHeight-20;  // The y-coordinate of the bottom of the bars
+                            // rescale data to be the same height as the canvas
+                            values = data.map(item => item.value);
+                            rescaledValues = data.map(item => rescale(item.value, Math.min(...values), Math.max(...values), 1, canvasHeight-20));
+                            data.forEach((item, index) => {
+                                const barHeight = rescaledValues[index];
+                                ctx.fillStyle = 'green';
+                                ctx.fillRect(x, yBottom - barHeight, 40, barHeight);
+                                x += 50;  // Increment x position for the next bar
+                            });
+
+                            // Draw x-axis
+                            ctx.beginPath();
+                            ctx.moveTo(0, yBottom);
+                            ctx.lineTo(canvasHeight + 10, yBottom);
+                            ctx.stroke();
+
+                            // Draw x-axis labels
+                            x = 10;
+                            labels = data.map(item => `${Math.round(item.bucket[0])}-${Math.round(item.bucket[1])}`);
+                            console.log(labels)
+                            labels.forEach(label => {
+                                ctx.fillStyle = 'black';
+                                ctx.fillText(label, x, yBottom + 15);  // +15 positions the label below the x-axis
+                                    x += 50;  // Increment x position for the next label
+                            });
+                        })
+                        .catch((error) => {
+                            console.error('Error fetching data:', error);
+                        });
+                });
+                
+                
+                // Go button action
+                document.getElementById("go-btn").addEventListener("click", function() {
+                    var urlValue = document.getElementById("url-input").value;
+                    var reference = document.getElementById("reference").checked;
+                    var variableValue = getVariableInput();
+                    var rescaleValue = document.getElementById("rescale-input").value;
+                    var colormapValue = document.getElementById("colormap-dropdown").value;
+                    if (urlValue) {
+                        // Redirect to the map URL with the input value as a parameter
+                        var href = `map?url=${encodeURIComponent(urlValue)}&variable=${encodeURIComponent(variableValue)}`;
+                        if (reference) {
+                            href += `&reference=${reference}`;
+                        }                        
+                        if (rescaleValue) {
+                            href += `&rescale=${encodeURIComponent(rescaleValue)}`;
+                        }
+                        if (colormapValue) {
+                            href += `&colormap_name=${encodeURIComponent(colormapValue)}`;
+                        }
+                        window.location.href = href;
+                    }
+                });
+
+            </script>
+    </body>
+</html>

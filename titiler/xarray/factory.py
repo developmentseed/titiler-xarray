@@ -4,10 +4,13 @@ from dataclasses import dataclass
 from typing import Dict, List, Literal, Optional, Tuple, Type
 from urllib.parse import urlencode
 
+import jinja2
+import numpy as np
 from fastapi import Depends, Path, Query
 from rio_tiler.models import Info
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, Response
+from starlette.templating import Jinja2Templates
 
 from titiler.core.dependencies import RescalingParams
 from titiler.core.factory import BaseTilerFactory, img_endpoint_params
@@ -184,7 +187,6 @@ class ZarrTilerFactory(BaseTilerFactory):
 
             if colormap:
                 image = image.apply_colormap(colormap)
-
             if not format:
                 format = ImageType.jpeg if image.mask.all() else ImageType.png
 
@@ -309,12 +311,41 @@ class ZarrTilerFactory(BaseTilerFactory):
                     [-180, -90, 180, 90], list(src_dst.geographic_bounds)
                 )
                 bounds = [max(minx), max(miny), min(maxx), min(maxy)]
+
                 return {
                     "bounds": bounds,
                     "minzoom": minzoom if minzoom is not None else src_dst.minzoom,
                     "maxzoom": maxzoom if maxzoom is not None else src_dst.maxzoom,
                     "tiles": [tiles_url],
                 }
+
+        @self.router.get(
+            "/histogram",
+            response_class=JSONResponse,
+            responses={200: {"description": "Return histogram for this data variable"}},
+            response_model_exclude_none=True,
+        )
+        def histogram(
+            url: str = Query(..., description="Dataset URL"),
+            variable: str = Query(..., description="Variable"),
+            reference: bool = Query(
+                False,
+                title="reference",
+                description="Whether the src_path is a kerchunk reference",
+            ),
+        ):
+            with self.reader(url, variable=variable, reference=reference) as src_dst:
+                boolean_mask = ~np.isnan(src_dst.input)
+                data_values = src_dst.input.values[boolean_mask]
+                counts, values = np.histogram(data_values, bins=10)
+                counts, values = counts.tolist(), values.tolist()
+                buckets = list(
+                    zip(values, [values[i + 1] for i in range(len(values) - 1)])
+                )
+                hist_dict = []
+                for idx, bucket in enumerate(buckets):
+                    hist_dict.append({"bucket": bucket, "value": counts[idx]})
+                return hist_dict
 
         @self.router.get("/map", response_class=HTMLResponse)
         @self.router.get("/{TileMatrixSetId}/map", response_class=HTMLResponse)
@@ -324,7 +355,7 @@ class ZarrTilerFactory(BaseTilerFactory):
                 self.default_tms,
                 description=f"TileMatrixSet Name (default: '{self.default_tms}')",
             ),  # noqa
-            url: str = Query(..., description="Dataset URL"),  # noqa
+            url: Optional[str] = Query(None, description="Dataset URL"),  # noqa
             group: Optional[int] = Query(  # noqa
                 None, description="Select a specific Zarr Group (Zoom Level)."
             ),
@@ -341,7 +372,9 @@ class ZarrTilerFactory(BaseTilerFactory):
             decode_times: Optional[bool] = Query(  # noqa
                 True, title="decode_times", description="Whether to decode times"
             ),
-            variable: str = Query(..., description="Xarray Variable"),  # noqa
+            variable: Optional[str] = Query(
+                None, description="Xarray Variable"
+            ),  # noqa
             drop_dim: Optional[str] = Query(
                 None, description="Dimension to drop"
             ),  # noqa
@@ -377,20 +410,33 @@ class ZarrTilerFactory(BaseTilerFactory):
             env=Depends(self.environment_dependency),  # noqa
         ):
             """Return map Viewer."""
-            tilejson_url = self.url_for(
-                request, "tilejson_endpoint", TileMatrixSetId=TileMatrixSetId
+            templates = Jinja2Templates(
+                directory="",
+                loader=jinja2.ChoiceLoader([jinja2.PackageLoader(__package__, ".")]),
             )
-            if request.query_params._list:
-                tilejson_url += f"?{urlencode(request.query_params._list)}"
+            if url:
+                tilejson_url = self.url_for(
+                    request, "tilejson_endpoint", TileMatrixSetId=TileMatrixSetId
+                )
+                if request.query_params._list:
+                    tilejson_url += f"?{urlencode(request.query_params._list)}"
 
-            tms = self.supported_tms.get(TileMatrixSetId)
-            return self.templates.TemplateResponse(
-                name="map.html",
-                context={
-                    "request": request,
-                    "tilejson_endpoint": tilejson_url,
-                    "tms": tms,
-                    "resolutions": [tms._resolution(matrix) for matrix in tms],
-                },
-                media_type="text/html",
-            )
+                tms = self.supported_tms.get(TileMatrixSetId)
+                return templates.TemplateResponse(
+                    name="map.html",
+                    context={
+                        "request": request,
+                        "tilejson_endpoint": tilejson_url,
+                        "tms": tms,
+                        "resolutions": [tms._resolution(matrix) for matrix in tms],
+                    },
+                    media_type="text/html",
+                )
+            else:
+                return templates.TemplateResponse(
+                    name="map-form.html",
+                    context={
+                        "request": request,
+                    },
+                    media_type="text/html",
+                )
