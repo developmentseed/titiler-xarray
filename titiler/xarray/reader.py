@@ -18,7 +18,7 @@ def xarray_open_dataset(
     src_path: str,
     group: Optional[Any] = None,
     reference: Optional[bool] = False,
-    decode_times: Optional[bool] = False,
+    decode_times: Optional[bool] = True,
 ) -> xarray.Dataset:
     """Open dataset."""
     xr_open_args: Dict[str, Any] = {
