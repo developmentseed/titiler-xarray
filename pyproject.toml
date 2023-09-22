@@ -35,6 +35,7 @@ dependencies = [
     "titiler.core>=0.14.1",
     "starlette-cramjam>=0.3,<0.4",
     "python-dotenv",
+    "pydantic_settings",
 ]
 
 [project.optional-dependencies]
