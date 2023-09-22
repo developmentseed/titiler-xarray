@@ -131,8 +131,6 @@ class ZarrReader(XarrayReader):
             time_slice=self.time_slice,
             drop_dim=self.drop_dim,
         )
-        # import pdb; pdb.set_trace()
-        # compare the fill_value with the nodata value
 
         self.bounds = tuple(self.input.rio.bounds())
         self.crs = self.input.rio.crs
