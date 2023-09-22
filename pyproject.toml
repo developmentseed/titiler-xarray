@@ -32,7 +32,7 @@ dependencies = [
     "s3fs",
     "requests",
     "aiohttp",
-    "titiler.core>=0.11.7,<0.12",
+    "titiler.core>=0.14.1",
     "starlette-cramjam>=0.3,<0.4",
     "python-dotenv",
 ]

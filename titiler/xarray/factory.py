@@ -7,10 +7,12 @@ from urllib.parse import urlencode
 import jinja2
 import numpy as np
 from fastapi import Depends, Path, Query
+from pydantic import conint
 from rio_tiler.models import Info
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, Response
 from starlette.templating import Jinja2Templates
+from typing_extensions import Annotated
 
 from titiler.core.dependencies import RescalingParams
 from titiler.core.factory import BaseTilerFactory, img_endpoint_params
@@ -113,18 +115,17 @@ class ZarrTilerFactory(BaseTilerFactory):
             z: int = Path(..., ge=0, le=30, description="TileMatrixSet zoom level"),
             x: int = Path(..., description="TileMatrixSet column"),
             y: int = Path(..., description="TileMatrixSet row"),
-            TileMatrixSetId: Literal[  # type: ignore
-                tuple(self.supported_tms.list())
-            ] = Query(
-                self.default_tms,
-                description=f"TileMatrixSet Name (default: '{self.default_tms}')",
-            ),
-            scale: int = Query(
-                1, gt=0, lt=4, description="Tile size scale. 1=256x256, 2=512x512..."
-            ),
-            format: ImageType = Query(
-                None, description="Output image type. Default is auto."
-            ),
+            TileMatrixSetId: Annotated[  # type: ignore
+                Literal[tuple(self.supported_tms.list())],
+                f"Identifier selecting one of the TileMatrixSetId supported (default: '{self.default_tms}')",
+            ] = self.default_tms,
+            scale: Annotated[  # type: ignore
+                conint(gt=0, le=4), "Tile size scale. 1=256x256, 2=512x512..."
+            ] = 1,
+            format: Annotated[
+                ImageType,
+                "Default will be automatically defined if the output image needs a mask (png) or not (jpeg).",
+            ] = None,
             url: str = Query(..., description="Dataset URL"),
             multiscale: Optional[bool] = Query(
                 False,
@@ -169,11 +170,9 @@ class ZarrTilerFactory(BaseTilerFactory):
                 time_slice=time_slice,
                 tms=tms,
             ) as src_dst:
+
                 image = src_dst.tile(
-                    x,
-                    y,
-                    z,
-                    tilesize=scale * 256,
+                    x, y, z, tilesize=scale * 256, nodata=src_dst.input.rio.nodata
                 )
 
             if post_process:
@@ -212,12 +211,10 @@ class ZarrTilerFactory(BaseTilerFactory):
         )
         def tilejson_endpoint(  # type: ignore
             request: Request,
-            TileMatrixSetId: Literal[  # type: ignore
-                tuple(self.supported_tms.list())
-            ] = Query(
-                self.default_tms,
-                description=f"TileMatrixSet Name (default: '{self.default_tms}')",
-            ),
+            TileMatrixSetId: Annotated[  # type: ignore
+                Literal[tuple(self.supported_tms.list())],
+                f"Identifier selecting one of the TileMatrixSetId supported (default: '{self.default_tms}')",
+            ] = self.default_tms,
             url: str = Query(..., description="Dataset URL"),
             group: Optional[int] = Query(
                 None, description="Select a specific Zarr Group (Zoom Level)."
@@ -351,10 +348,10 @@ class ZarrTilerFactory(BaseTilerFactory):
         @self.router.get("/{TileMatrixSetId}/map", response_class=HTMLResponse)
         def map_viewer(
             request: Request,
-            TileMatrixSetId: Literal[tuple(self.supported_tms.list())] = Query(  # type: ignore
-                self.default_tms,
-                description=f"TileMatrixSet Name (default: '{self.default_tms}')",
-            ),  # noqa
+            TileMatrixSetId: Annotated[  # type: ignore
+                Literal[tuple(self.supported_tms.list())],
+                f"Identifier selecting one of the TileMatrixSetId supported (default: '{self.default_tms}')",
+            ] = self.default_tms,
             url: Optional[str] = Query(None, description="Dataset URL"),  # noqa
             group: Optional[int] = Query(  # noqa
                 None, description="Select a specific Zarr Group (Zoom Level)."

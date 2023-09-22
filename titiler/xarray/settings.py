@@ -1,9 +1,9 @@
 """Titiler API settings."""
-
 import pydantic
+import pydantic_settings
 
 
-class ApiSettings(pydantic.BaseSettings):
+class ApiSettings(pydantic_settings.BaseSettings):
     """FASTAPI application settings."""
 
     name: str = "titiler-xarray"
