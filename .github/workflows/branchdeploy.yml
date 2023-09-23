@@ -1,7 +1,11 @@
 name: Branch Deploy
 
 # The workflow to execute on is comments that are newly created
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  push:
+    branches:
+    - feat/upgrade_rio_tiler
 
 # Permissions needed for reacting and adding comments for IssueOps commands
 permissions:
