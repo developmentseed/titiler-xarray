@@ -63,6 +63,7 @@ jobs:
       run:
         working-directory: infrastructure/aws
 
+    steps:
       # Checkout your projects repository based on the ref provided by the branch-deploy step
       - uses: actions/checkout@v3
         if: github.ref == 'refs/heads/main' && github.event_name == 'pull_request'
