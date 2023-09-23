@@ -93,7 +93,7 @@ jobs:
 
       # Build and deploy production when branch is main and event is push
       - name: Build & Deploy Production
-        run: npm run cdk -- deploy titiler-xarray-production
+        run: npm run cdk -- deploy titiler-xarray-production --require-approval never
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         env:
           TITILER_XARRAY_PYTHONWARNINGS: ignore
@@ -103,7 +103,7 @@ jobs:
 
       # Build and deploy dev when event is pull_request
       - name: Build & Deploy Development
-        run: npm run cdk -- deploy titiler-xarray-development
+        run: npm run cdk -- deploy titiler-xarray-development --require-approval never
         if: github.event_name == 'pull_request'
         env:
           TITILER_XARRAY_PYTHONWARNINGS: ignore
