@@ -61,7 +61,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./infrastructure/aws
+        working-directory: ../infrastructure/aws
 
     steps:
       # Checkout your projects repository based on the ref provided by the branch-deploy step
