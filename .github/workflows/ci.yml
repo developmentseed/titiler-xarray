@@ -61,12 +61,12 @@ jobs:
 
     steps:
       # Checkout your projects repository based on the ref provided by the branch-deploy step
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         if: github.ref == 'refs/heads/main' && github.event_name == 'pull_request'
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
+        # with:
+        #   ref: ${{ github.event.pull_request.head.sha }}
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
       - name: Configure AWS credentials
