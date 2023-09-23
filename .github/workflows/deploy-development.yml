@@ -15,6 +15,7 @@ permissions:
 
 jobs:
   deploy-development:
+    name: Deploy to development environment
     defaults:
       run:
         working-directory: infrastructure/aws
@@ -33,19 +34,10 @@ jobs:
 
       # Checkout your projects repository based on the ref provided by the branch-deploy step
       - uses: actions/checkout@v3
+        if: steps.branch-deploy.outputs.continue == 'true'
         with:
           ref: ${{ steps.branch-deploy.outputs.ref }}
-      # Do some fake "noop" deployment logic here
-      # conditionally run a noop deployment
-      - name: fake noop deploy
-        if: ${{ steps.branch-deploy.outputs.continue == 'true' && steps.branch-deploy.outputs.noop == 'true' }}
-        run: echo "I am doing a fake noop deploy"
 
-      # Do some fake "regular" deployment logic here
-      # conditionally run a regular deployment
-      - name: fake regular deploy
-        if: ${{ steps.branch-deploy.outputs.continue == 'true' && steps.branch-deploy.outputs.noop != 'true' }}
-        run: echo "I am doing a fake regular deploy"
       # - name: Configure AWS credentials
       #   uses: aws-actions/configure-aws-credentials@v2
       #   with:
