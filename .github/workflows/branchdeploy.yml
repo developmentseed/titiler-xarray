@@ -30,7 +30,7 @@ jobs:
     steps:
       # Execute IssueOps branch deployment logic, hooray!
       # This will be used to "gate" all future steps below and conditionally trigger steps/deployments
-      - uses: github/branch-deploy@e01d5aa54a277a8f36d6954c5ed5a29e35d27097 # pin@v2.2.0
+      - uses: github/branch-deploy@v8.0.0
         id: branch-deploy
 
       # Run your deployment logic for your project here - examples seen below
