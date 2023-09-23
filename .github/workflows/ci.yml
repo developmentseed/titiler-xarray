@@ -11,6 +11,15 @@ on:
       - 'pyproject.toml'
       - 'titiler/**'
       - '.pre-commit-config.yaml'
+  pull_request:
+    branches:
+    - main
+    tags:
+    - '*'
+    paths:
+      - 'pyproject.toml'
+      - 'titiler/**'
+      - '.pre-commit-config.yaml'
 env:
   LATEST_PY_VERSION: '3.10'
 
@@ -54,8 +63,14 @@ jobs:
       run:
         working-directory: infrastructure/aws
 
-    steps:
+      # Checkout your projects repository based on the ref provided by the branch-deploy step
       - uses: actions/checkout@v3
+        if: github.ref == 'refs/heads/main' && github.event_name == 'pull_request'
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/checkout@v3
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -92,3 +107,12 @@ jobs:
           TITILER_STACK_ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }}
           STACK_STAGE: production
 
+      # Build and deploy dev when event is pull_request
+      - name: Build & Deploy Development
+        run: npm run cdk -- deploy titiler-xarray-development --require-approval never
+        if: github.event_name == 'pull_request'
+        env:
+          TITILER_XARRAY_PYTHONWARNINGS: ignore
+          TITILER_XARRAY_DEBUG: True
+          TITILER_STACK_ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }}
+          STACK_STAGE: development
