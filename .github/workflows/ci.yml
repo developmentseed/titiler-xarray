@@ -1,6 +1,5 @@
 name: Test and Deploy
 
-# On every pull request, but only on push to main
 on:
   push:
     branches:
@@ -8,11 +7,19 @@ on:
     tags:
     - '*'
     paths:
-      # Only run test and docker publish if some code have changed
+      # Only run tests if some code have changed
       - 'pyproject.toml'
       - 'titiler/**'
       - '.pre-commit-config.yaml'
   pull_request:
+    branches:
+    - main
+    tags:
+    - '*'
+    paths:
+      - 'pyproject.toml'
+      - 'titiler/**'
+      - '.pre-commit-config.yaml'
 env:
   LATEST_PY_VERSION: '3.10'
 
@@ -51,7 +58,6 @@ jobs:
   deploy:
     needs: [tests]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
 
     defaults:
       run:
@@ -85,11 +91,22 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements-cdk.txt
 
-      # Build and Deploy CDK application
+      # Build and deploy production when branch is main and event is push
       - name: Build & Deploy
         run: npm run cdk -- deploy titiler-xarray-production
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         env:
           TITILER_XARRAY_PYTHONWARNINGS: ignore
           TITILER_XARRAY_DEBUG: True
           TITILER_STACK_ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }}
           TITILER_STACK_STAGE: production
+
+      # Build and deploy dev when event is pull_request
+      - name: Build & Deploy
+        run: npm run cdk -- deploy titiler-xarray-development
+        if: github.event_name == 'pull_request'
+        env:
+          TITILER_XARRAY_PYTHONWARNINGS: ignore
+          TITILER_XARRAY_DEBUG: True
+          TITILER_STACK_ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }}
+          TITILER_STACK_STAGE: development
