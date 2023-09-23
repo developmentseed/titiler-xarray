@@ -1,4 +1,4 @@
-name: "branch deploy"
+name: Branch Deploy
 
 # The workflow to execute on is comments that are newly created
 on: workflow_dispatch
