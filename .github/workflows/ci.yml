@@ -63,8 +63,8 @@ jobs:
       # Checkout your projects repository based on the ref provided by the branch-deploy step
       - uses: actions/checkout@v4
         if: github.ref == 'refs/heads/main' && github.event_name == 'pull_request'
-        path: '..'
         with:
+          path: '..'
           ref: ${{ github.event.pull_request.head.sha }}
 
       - uses: actions/checkout@v4
