@@ -2,12 +2,12 @@ name: Branch Deploy
 
 # The workflow to execute on is comments that are newly created
 on:
-  issue_comment:
-    types: [ created ]
-  # workflow_dispatch:
-  # push:
-  #   branches:
-  #   - feat/upgrade_rio_tiler
+  # issue_comment:
+  #   types: [ created ]
+  workflow_dispatch:
+  push:
+    branches:
+    - feat/upgrade_rio_tiler
   
 
 # Permissions needed for reacting and adding comments for IssueOps commands
@@ -25,7 +25,7 @@ jobs:
       run:
         working-directory: infrastructure/aws
   
-    if: ${{ github.event.issue.pull_request }} # only run on pull request comments
+    # if: ${{ github.event.issue.pull_request }} # only run on pull request comments
     runs-on: ubuntu-latest
     steps:
       # Execute IssueOps branch deployment logic, hooray!
