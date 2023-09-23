@@ -1,11 +1,7 @@
 name: "branch deploy"
 
 # The workflow to execute on is comments that are newly created
-on:
-  - workflow_dispatch
-  - issue_comment:
-    - types: [created]
-  
+on: workflow_dispatch
 
 # Permissions needed for reacting and adding comments for IssueOps commands
 permissions:
