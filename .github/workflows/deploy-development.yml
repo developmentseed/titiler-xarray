@@ -2,7 +2,7 @@ name: "branch deploy"
 
 # The workflow to execute on is comments that are newly created
 on:
-  - workflow_dispatch:
+  - workflow_dispatch
   - issue_comment:
     - types: [created]
   
