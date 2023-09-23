@@ -92,21 +92,21 @@ jobs:
           python -m pip install -r requirements-cdk.txt
 
       # Build and deploy production when branch is main and event is push
-      - name: Build & Deploy
+      - name: Build & Deploy Production
         run: npm run cdk -- deploy titiler-xarray-production
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         env:
           TITILER_XARRAY_PYTHONWARNINGS: ignore
           TITILER_XARRAY_DEBUG: True
           TITILER_STACK_ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }}
-          TITILER_STACK_STAGE: production
+          STACK_STAGE: production
 
       # Build and deploy dev when event is pull_request
-      - name: Build & Deploy
+      - name: Build & Deploy Development
         run: npm run cdk -- deploy titiler-xarray-development
         if: github.event_name == 'pull_request'
         env:
           TITILER_XARRAY_PYTHONWARNINGS: ignore
           TITILER_XARRAY_DEBUG: True
           TITILER_STACK_ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }}
-          TITILER_STACK_STAGE: development
+          STACK_STAGE: development
