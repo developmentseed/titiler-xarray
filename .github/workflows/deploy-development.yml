@@ -14,7 +14,7 @@ permissions:
   checks: read
 
 jobs:
-  deploy:
+  deploy-development:
     defaults:
       run:
         working-directory: infrastructure/aws
