@@ -104,7 +104,7 @@ jobs:
       # Build and deploy dev on push to dev
       - name: Build & Deploy Development
         run: npm run cdk -- deploy titiler-xarray-development --require-approval never
-        if: github.ref == 'refs/heads/dev && github.event_name == 'push'
+        if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
         env:
           TITILER_XARRAY_PYTHONWARNINGS: ignore
           TITILER_XARRAY_DEBUG: True
