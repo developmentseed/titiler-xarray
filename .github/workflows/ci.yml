@@ -4,19 +4,11 @@ on:
   push:
     branches:
     - main
+    - dev
     tags:
     - '*'
     paths:
       # Only run tests if some code have changed
-      - 'pyproject.toml'
-      - 'titiler/**'
-      - '.pre-commit-config.yaml'
-  pull_request:
-    branches:
-    - main
-    tags:
-    - '*'
-    paths:
       - 'pyproject.toml'
       - 'titiler/**'
       - '.pre-commit-config.yaml'
@@ -64,14 +56,15 @@ jobs:
         working-directory: infrastructure/aws
 
     steps:
-      # Checkout your projects repository based on the ref provided by the branch-deploy step
       - uses: actions/checkout@v4
-        if: github.event_name == 'pull_request'
+        if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: $refs/heads/dev
 
       - uses: actions/checkout@v4
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        with:
+          ref: $refs/heads/main
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -111,7 +104,7 @@ jobs:
       # Build and deploy dev when event is pull_request
       - name: Build & Deploy Development
         run: npm run cdk -- deploy titiler-xarray-development --require-approval never
-        if: github.event_name == 'pull_request'
+        if: github.ref == 'refs/heads/dev && github.event_name == 'push'
         env:
           TITILER_XARRAY_PYTHONWARNINGS: ignore
           TITILER_XARRAY_DEBUG: True
