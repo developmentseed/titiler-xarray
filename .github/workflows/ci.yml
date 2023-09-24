@@ -7,11 +7,11 @@ on:
     - dev
     tags:
     - '*'
-    paths:
-      # Only run tests if some code have changed
-      - 'pyproject.toml'
-      - 'titiler/**'
-      - '.pre-commit-config.yaml'
+    # paths:
+    #   # Only run tests if some code have changed
+    #   - 'pyproject.toml'
+    #   - 'titiler/**'
+    #   - '.pre-commit-config.yaml'
 env:
   LATEST_PY_VERSION: '3.10'
 
@@ -98,7 +98,7 @@ jobs:
         env:
           TITILER_XARRAY_PYTHONWARNINGS: ignore
           TITILER_XARRAY_DEBUG: True
-          TITILER_STACK_ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }}
+          STACK_ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }}
           STACK_STAGE: production
 
       # Build and deploy dev on push to dev
@@ -108,5 +108,5 @@ jobs:
         env:
           TITILER_XARRAY_PYTHONWARNINGS: ignore
           TITILER_XARRAY_DEBUG: True
-          TITILER_STACK_ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }}
+          STACK_ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }}
           STACK_STAGE: development
