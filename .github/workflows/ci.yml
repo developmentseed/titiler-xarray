@@ -7,11 +7,11 @@ on:
     - dev
     tags:
     - '*'
-    # paths:
-    #   # Only run tests if some code have changed
-    #   - 'pyproject.toml'
-    #   - 'titiler/**'
-    #   - '.pre-commit-config.yaml'
+      # paths:
+      #   # Only run tests if some code have changed
+      #   - 'pyproject.toml'
+      #   - 'titiler/**'
+      #   - '.pre-commit-config.yaml'
 env:
   LATEST_PY_VERSION: '3.10'
 
@@ -59,12 +59,12 @@ jobs:
       - uses: actions/checkout@v4
         if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
         with:
-          ref: $refs/heads/dev
+          ref: dev
 
       - uses: actions/checkout@v4
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         with:
-          ref: $refs/heads/main
+          ref: main
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
