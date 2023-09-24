@@ -116,7 +116,7 @@
         <!-- Popup Container -->
         <div id="popup-container">
             <div id="popup-content">
-                
+
                 <!-- URL input -->
                 <h2>Visualize Zarr</h2>
                 <h4>Step 1: Enter the URL of your Zarr store</h4>
@@ -141,16 +141,16 @@
                 <!-- Get histogram -->
                 <h4>Step 3: Enter the rescale values.</h4>
                 <p>By default, data values will be represented as they fall in the 0,255 RGB range. This won't work for most data. If data values are very small, ranging from 0 to 1 like many climate indices, you will see a big black box. Conversely, if most of your data is greater than 255, your data will appear white. It makes sense to rescale your data via the rescale parameter. If your data ranges from 0,1 that should be your rescale value.</p>
-                <p>You can enter the rescale value directly or click "Get histogram" to see a histogram of the data values.</p>           
+                <p>You can enter the rescale value directly or click "Get histogram" to see a histogram of the data values.</p>
                 <br />
                 <button id="get-histogram-btn">Get histogram</button>
                 <div id="loading-icon-histogram" class="loading-icon" style="display: none;">
                     <div class="spinner"></div>
-                </div>                
+                </div>
                 <div id="histogram-container">
                     <canvas id="histogram-canvas" width="600" height="0" ></canvas>
                 </div>
-                <input type="text" id="rescale-input" placeholder="Rescale, ex. 1,100 (optional)">           
+                <input type="text" id="rescale-input" placeholder="Rescale, ex. 1,100 (optional)">
                 <br />
 
                 <!-- Colormap dropdown -->
@@ -237,6 +237,16 @@
                     }
                 }
 
+                function formatNumberWithScientific(num) {
+                    if (Math.abs(num) < 0.001) {
+                        // Use toExponential for numbers less than 0.001 (1e-3)
+                        return num.toExponential(3);
+                    } else {
+                        // Use toFixed for other numbers with 4 decimal places
+                        return num.toFixed(4);
+                    }
+                }
+
                 document.getElementById("get-histogram-btn").addEventListener("click", function() {
                     const loadingIcon = document.getElementById('loading-icon-histogram');
                     loadingIcon.style.display = 'inline-block';
@@ -248,10 +258,10 @@
                         .then(response => response.json()) // Assuming server responds with JSON
                         .then(data => {
                             loadingIcon.style.display = 'none';
-                            var canvasHeight = 200;
+                            var canvasHeight = 300;
                             const canvas = document.getElementById("histogram-canvas");
                             const ctx = canvas.getContext("2d");
-                            canvas.height = canvasHeight;
+                            canvas.height = canvasHeight + 50;
 
                             // Draw bars
                             let x = 10;
@@ -274,20 +284,26 @@
 
                             // Draw x-axis labels
                             x = 10;
-                            labels = data.map(item => `${Math.round(item.bucket[0])}-${Math.round(item.bucket[1])}`);
-                            console.log(labels)
+                            labels = data.map(item => `${formatNumberWithScientific(item.bucket[0])} - ${formatNumberWithScientific(item.bucket[1])}`);
+
                             labels.forEach(label => {
+                                ctx.save();  // Save the current state of the context
+                                ctx.translate(x + 5, yBottom + 5);  // Set the origin to the point where the label should be
+                                ctx.rotate(Math.PI / 4);  // Rotate 45 degrees (converted to radians)
                                 ctx.fillStyle = 'black';
-                                ctx.fillText(label, x, yBottom + 15);  // +15 positions the label below the x-axis
-                                    x += 50;  // Increment x position for the next label
+                                ctx.fillText(label, 0, 0);  // Draw the label at the new origin
+
+                                ctx.restore();  // Restore the context to its state before the translation and rotation
+
+                                x += 50;  // Increment x position for the next label
                             });
                         })
                         .catch((error) => {
                             console.error('Error fetching data:', error);
                         });
                 });
-                
-                
+
+
                 // Go button action
                 document.getElementById("go-btn").addEventListener("click", function() {
                     var urlValue = document.getElementById("url-input").value;
@@ -300,7 +316,7 @@
                         var href = `map?url=${encodeURIComponent(urlValue)}&variable=${encodeURIComponent(variableValue)}`;
                         if (reference) {
                             href += `&reference=${reference}`;
-                        }                        
+                        }
                         if (rescaleValue) {
                             href += `&rescale=${encodeURIComponent(rescaleValue)}`;
                         }
