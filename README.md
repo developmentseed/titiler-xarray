@@ -48,7 +48,7 @@ The Github Actions workflow defined in [.github/workflows/ci.yml](./.github/work
 
 ## New Deployments
 
-The following steps detail how to to create a new deployment and run it from your local machine.
+The following steps detail how to to setup and deploy the CDK stack from your local machine.
 
 1. Install CDK and connect to your AWS account. This step is only necessary once per AWS account.
 
