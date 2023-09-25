@@ -2,6 +2,9 @@ name: "branch deploy demo"
 
 # The workflow to execute on is comments that are newly created
 on:
+  push:
+    branches:
+    - feat/deploy-branch
   issue_comment:
     types: [created]
 
@@ -14,7 +17,7 @@ permissions:
 
 jobs:
   demo:
-    if: ${{ github.event.issue.pull_request }} # only run on pull request comments
+    #if: ${{ github.event.issue.pull_request }} # only run on pull request comments
     runs-on: ubuntu-latest
     steps:
       # Execute IssueOps branch deployment logic, hooray!
