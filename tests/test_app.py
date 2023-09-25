@@ -136,7 +136,7 @@ def test_histogram(app):
         params={"url": test_zarr_store, "variable": "CDD0"},
     )
     assert response.status_code == 200
-    with open("histogram-response.json", "r") as f:
+    with open(f"{DATA_DIR}/response/histogram-response.json", "r") as f:
         assert response.json() == json.load(f)
 
 
