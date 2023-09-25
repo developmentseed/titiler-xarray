@@ -13,11 +13,8 @@ def is_recursion_validation_error(exc: ValidationError) -> bool:
 def app(monkeypatch):
     """App fixture."""
     monkeypatch.setenv("TITILER_XARRAY_DEBUG", "TRUE")
-    try:
-        from titiler.xarray.main import app
-    except Exception as exc:
-        if not (is_recursion_validation_error(exc)):
-            raise exc        
+    
+    from titiler.xarray.main import app # type: ignore
 
     with TestClient(app) as client:
         yield client
