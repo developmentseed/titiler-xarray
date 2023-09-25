@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   demo:
-    #if: ${{ github.event.issue.pull_request }} # only run on pull request comments
+    if: ${{ github.event.issue.pull_request }} # only run on pull request comments
     runs-on: ubuntu-latest
     steps:
       # Execute IssueOps branch deployment logic, hooray!
