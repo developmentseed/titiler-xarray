@@ -2,9 +2,9 @@ name: "branch deploy demo"
 
 # The workflow to execute on is comments that are newly created
 on:
-  push:
-    branches:
-    - feat/deploy-branch
+  # push:
+  #   branches:
+  #   - feat/deploy-branch
   issue_comment:
     types: [created]
 
