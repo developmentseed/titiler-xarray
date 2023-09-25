@@ -42,8 +42,8 @@ python -m pytest tests/test_app.py::test_get_info --cov titiler.xarray --cov-rep
 The Github Actions workflow defined in [.github/workflows/ci.yml](./.github/workflows/ci.yml) deploys code to AWS for the VEDA project.
 
 * There are 2 stacks - one production and one development.
-* The production stack is deployed when the `main` branch is tagged, creating a new release. The production stack will have the domain prod-titiler-xarray.delta-backend.com/.
-* The development stack will be deployed upon pushes to the `dev` and `mai`n branches. The development stack will have the domain dev-titiler-xarray.delta-backend.com/
+* The production stack is deployed when the `main` branch is tagged, creating a new release. The production stack will deploy to a stack with an API Gateway associated with the domain prod-titiler-xarray.delta-backend.com/.
+* The development stack will be deployed upon pushes to the `dev` and `main` branches. The development stack will deploy to a stack with an API Gateway associated with the domain dev-titiler-xarray.delta-backend.com/.
 
 
 ## New Deployments

@@ -96,7 +96,7 @@ jobs:
           python -m pip install -r requirements-cdk.txt
 
       # Build and deploy to the development environment whenever there is a push to main or dev
-      - name: Build & Deploy
+      - name: Build & Deploy Development
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
         run: npm run cdk -- deploy titiler-xarray-development
         env:
@@ -113,4 +113,4 @@ jobs:
           TITILER_XARRAY_PYTHONWARNINGS: ignore
           TITILER_XARRAY_DEBUG: True
           STACK_ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }}
-          STACK_STAGE: production          
+          STACK_STAGE: production
