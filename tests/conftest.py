@@ -14,7 +14,7 @@ def app(monkeypatch):
     """App fixture."""
     monkeypatch.setenv("TITILER_XARRAY_DEBUG", "TRUE")
     
-    from titiler.xarray.main import app # type: ignore
+    from titiler.xarray.main import app # noqa
 
     with TestClient(app) as client:
         yield client
