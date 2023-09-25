@@ -1,17 +1,18 @@
 name: Test and Deploy
 
+# On every pull request, but only on push to main
 on:
   push:
     branches:
     - main
-    - dev
     tags:
     - '*'
-      # paths:
-      #   # Only run tests if some code have changed
-      #   - 'pyproject.toml'
-      #   - 'titiler/**'
-      #   - '.pre-commit-config.yaml'
+    paths:
+      # Only run test and docker publish if some code have changed
+      - 'pyproject.toml'
+      - 'titiler/**'
+      - '.pre-commit-config.yaml'
+  pull_request:
 env:
   LATEST_PY_VERSION: '3.10'
 
@@ -48,23 +49,16 @@ jobs:
         run: python -m pytest --cov titiler.xarray --cov-report term-missing -s -vv
 
   deploy:
-    #needs: [tests]
+    needs: [tests]
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
 
     defaults:
       run:
         working-directory: infrastructure/aws
 
     steps:
-      - uses: actions/checkout@v4
-        if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
-        with:
-          ref: dev
-
-      - uses: actions/checkout@v4
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        with:
-          ref: main
+      - uses: actions/checkout@v3
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -91,22 +85,11 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements-cdk.txt
 
-      # Build and deploy production when branch is main and event is push
-      - name: Build & Deploy Production
-        run: npm run cdk -- deploy titiler-xarray-production --require-approval never
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      # Build and Deploy CDK application
+      - name: Build & Deploy
+        run: npm run cdk -- deploy titiler-xarray-production
         env:
           TITILER_XARRAY_PYTHONWARNINGS: ignore
           TITILER_XARRAY_DEBUG: True
-          STACK_ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }}
-          STACK_STAGE: production
-
-      # Build and deploy dev on push to dev
-      - name: Build & Deploy Development
-        run: npm run cdk -- deploy titiler-xarray-development --require-approval never
-        if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
-        env:
-          TITILER_XARRAY_PYTHONWARNINGS: ignore
-          TITILER_XARRAY_DEBUG: True
-          STACK_ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }}
-          STACK_STAGE: development
+          TITILER_STACK_ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }}
+          TITILER_STACK_STAGE: production
