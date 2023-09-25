@@ -1,6 +1,11 @@
+""" Functions to simplify writing tests. """
 import httpx
 
+
 def find_string_in_stream(response: httpx.Response, target: str) -> bool:
+    """
+    Search for a string in a streaming response.
+    """
     # Ensure the response is valid
     response.raise_for_status()
     buffer = ""
@@ -11,5 +16,7 @@ def find_string_in_stream(response: httpx.Response, target: str) -> bool:
         if target in buffer:
             return True
         # Optional: To avoid the buffer getting too large, you can clear it or manage its size
-        buffer = buffer[-len(target):]  # Keep only the tail end of the buffer with length equal to the target string
+        buffer = buffer[
+            -len(target) :
+        ]  # Keep only the tail end of the buffer with length equal to the target string
     return False
