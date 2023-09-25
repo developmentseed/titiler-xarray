@@ -15,7 +15,7 @@ def app(monkeypatch):
     monkeypatch.setenv("TITILER_XARRAY_DEBUG", "TRUE")
     try:
         from titiler.xarray.main import app
-    except ValidationError as exc:
+    except Exception as exc:
         if not (is_recursion_validation_error(exc)):
             raise exc        
 
