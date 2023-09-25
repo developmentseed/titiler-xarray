@@ -407,7 +407,7 @@ class ZarrTilerFactory(BaseTilerFactory):
         @self.router.get("/{tileMatrixSetId}/map", response_class=HTMLResponse)
         def map_viewer(
             request: Request,
-            url: Annotated[str, Query(description="Dataset URL")],
+            url: Annotated[Optional[str], Query(description="Dataset URL")] = None,
             tileMatrixSetId: Annotated[  # type: ignore
                 Literal[tuple(self.supported_tms.list())],
                 f"Identifier selecting one of the TileMatrixSetId supported (default: '{self.default_tms}')",

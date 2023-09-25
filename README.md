@@ -14,6 +14,7 @@ python -m pip install --upgrade virtualenv
 virtualenv .venv
 
 python -m pip install -e . uvicorn
+source .venv/bin/activate
 uvicorn titiler.xarray.main:app --reload
 ```
 
