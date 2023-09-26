@@ -2,7 +2,7 @@
 
 import pytest
 from fastapi.testclient import TestClient
-from pydantic import ValidationError
+
 
 @pytest.fixture
 def app(monkeypatch):
