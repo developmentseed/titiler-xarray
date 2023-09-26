@@ -32,9 +32,11 @@ dependencies = [
     "s3fs",
     "requests",
     "aiohttp",
+    "pydantic==2.0.2",
     "titiler.core>=0.14.1,<0.15",
     "starlette-cramjam>=0.3,<0.4",
     "pydantic-settings~=2.0",
+    "yappi"
 ]
 
 [project.optional-dependencies]

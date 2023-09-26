@@ -117,6 +117,7 @@ def test_histogram_error(app):
         params={"url": test_zarr_store},
     )
     assert response.status_code == 422
+    print(response.json())
     assert response.json() == {
         "detail": [
             {
@@ -124,7 +125,7 @@ def test_histogram_error(app):
                 "loc": ["query", "variable"],
                 "msg": "Field required",
                 "input": None,
-                "url": "https://errors.pydantic.dev/2.3/v/missing",
+                "url": "https://errors.pydantic.dev/2.1.2/v/missing",
             }
         ]
     }
@@ -136,7 +137,7 @@ def test_histogram(app):
         params={"url": test_zarr_store, "variable": "CDD0"},
     )
     assert response.status_code == 200
-    with open(f"{DATA_DIR}/response/histogram-response.json", "r") as f:
+    with open(f"{DATA_DIR}/responses/histogram-response.json", "r") as f:
         assert response.json() == json.load(f)
 
 
