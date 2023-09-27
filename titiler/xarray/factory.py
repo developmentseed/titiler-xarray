@@ -1,22 +1,25 @@
 """TiTiler.xarray factory."""
 
 from dataclasses import dataclass
-from typing import Dict, List, Literal, Optional, Tuple, Type
+from typing import Dict, List, Literal, Optional, Type
 from urllib.parse import urlencode
 
 import jinja2
 import numpy as np
 from fastapi import Depends, Path, Query
+from pydantic import conint
 from rio_tiler.models import Info
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, Response
 from starlette.templating import Jinja2Templates
+from typing_extensions import Annotated
 
-from titiler.core.dependencies import RescalingParams
+from titiler.core.dependencies import ColorFormulaParams
 from titiler.core.factory import BaseTilerFactory, img_endpoint_params
 from titiler.core.models.mapbox import TileJSON
 from titiler.core.resources.enums import ImageType
 from titiler.core.resources.responses import JSONResponse
+from titiler.core.utils import render_image
 from titiler.xarray.reader import ZarrReader
 
 
@@ -35,18 +38,25 @@ class ZarrTilerFactory(BaseTilerFactory):
             responses={200: {"description": "Return dataset's Variables."}},
         )
         def variable_endpoint(
-            url: str = Query(..., description="Dataset URL"),
-            group: Optional[int] = Query(
-                None, description="Select a specific Zarr Group (Zoom Level)."
-            ),
-            reference: Optional[bool] = Query(
-                False,
-                title="reference",
-                description="Whether the dataset is a kerchunk reference",
-            ),
-            decode_times: Optional[bool] = Query(
-                True, title="decode_times", description="Whether to decode times"
-            ),
+            url: Annotated[str, Query(description="Dataset URL")],
+            group: Annotated[
+                Optional[int],
+                Query(description="Select a specific Zarr Group (Zoom Level)."),
+            ] = None,
+            reference: Annotated[
+                Optional[bool],
+                Query(
+                    title="reference",
+                    description="Whether the dataset is a kerchunk reference",
+                ),
+            ] = False,
+            decode_times: Annotated[
+                Optional[bool],
+                Query(
+                    title="decode_times",
+                    description="Whether to decode times",
+                ),
+            ] = True,
         ) -> List[str]:
             """return available variables."""
             return self.reader.list_variables(url, group=group, reference=reference)
@@ -59,23 +69,37 @@ class ZarrTilerFactory(BaseTilerFactory):
             responses={200: {"description": "Return dataset's basic info."}},
         )
         def info_endpoint(
-            url: str = Query(..., description="Dataset URL"),
-            group: Optional[int] = Query(
-                None, description="Select a specific Zarr Group (Zoom Level)."
-            ),
-            reference: bool = Query(
-                False,
-                title="reference",
-                description="Whether the src_path is a kerchunk reference",
-            ),
-            decode_times: bool = Query(
-                True, title="decode_times", description="Whether to decode times"
-            ),
-            variable: str = Query(..., description="Xarray Variable"),
-            drop_dim: Optional[str] = Query(None, description="Dimension to drop"),
-            show_times: Optional[bool] = Query(
-                None, description="Show info about the time dimension"
-            ),
+            url: Annotated[str, Query(description="Dataset URL")],
+            variable: Annotated[
+                str,
+                Query(description="Xarray Variable"),
+            ],
+            group: Annotated[
+                Optional[int],
+                Query(description="Select a specific Zarr Group (Zoom Level)."),
+            ] = None,
+            reference: Annotated[
+                bool,
+                Query(
+                    title="reference",
+                    description="Whether the dataset is a kerchunk reference",
+                ),
+            ] = False,
+            decode_times: Annotated[
+                bool,
+                Query(
+                    title="decode_times",
+                    description="Whether to decode times",
+                ),
+            ] = True,
+            drop_dim: Annotated[
+                Optional[str],
+                Query(description="Dimension to drop"),
+            ] = None,
+            show_times: Annotated[
+                Optional[bool],
+                Query(description="Show info about the time dimension"),
+            ] = None,
         ) -> Info:
             """Return dataset's basic info."""
             with self.reader(
@@ -98,66 +122,88 @@ class ZarrTilerFactory(BaseTilerFactory):
         @self.router.get(r"/tiles/{z}/{x}/{y}.{format}", **img_endpoint_params)
         @self.router.get(r"/tiles/{z}/{x}/{y}@{scale}x", **img_endpoint_params)
         @self.router.get(r"/tiles/{z}/{x}/{y}@{scale}x.{format}", **img_endpoint_params)
-        @self.router.get(r"/tiles/{TileMatrixSetId}/{z}/{x}/{y}", **img_endpoint_params)
+        @self.router.get(r"/tiles/{tileMatrixSetId}/{z}/{x}/{y}", **img_endpoint_params)
         @self.router.get(
-            r"/tiles/{TileMatrixSetId}/{z}/{x}/{y}.{format}", **img_endpoint_params
+            r"/tiles/{tileMatrixSetId}/{z}/{x}/{y}.{format}", **img_endpoint_params
         )
         @self.router.get(
-            r"/tiles/{TileMatrixSetId}/{z}/{x}/{y}@{scale}x", **img_endpoint_params
+            r"/tiles/{tileMatrixSetId}/{z}/{x}/{y}@{scale}x", **img_endpoint_params
         )
         @self.router.get(
-            r"/tiles/{TileMatrixSetId}/{z}/{x}/{y}@{scale}x.{format}",
+            r"/tiles/{tileMatrixSetId}/{z}/{x}/{y}@{scale}x.{format}",
             **img_endpoint_params,
         )
         def tiles_endpoint(  # type: ignore
-            z: int = Path(..., ge=0, le=30, description="TileMatrixSet zoom level"),
-            x: int = Path(..., description="TileMatrixSet column"),
-            y: int = Path(..., description="TileMatrixSet row"),
-            TileMatrixSetId: Literal[  # type: ignore
-                tuple(self.supported_tms.list())
-            ] = Query(
-                self.default_tms,
-                description=f"TileMatrixSet Name (default: '{self.default_tms}')",
-            ),
-            scale: int = Query(
-                1, gt=0, lt=4, description="Tile size scale. 1=256x256, 2=512x512..."
-            ),
-            format: ImageType = Query(
-                None, description="Output image type. Default is auto."
-            ),
-            url: str = Query(..., description="Dataset URL"),
-            multiscale: Optional[bool] = Query(
-                False,
-                title="multiscale",
-                description="Whether the dataset has multiscale groups (Zoom levels)",
-            ),
-            reference: bool = Query(
-                False,
-                title="reference",
-                description="Whether the src_path is a kerchunk reference",
-            ),
-            decode_times: bool = Query(
-                True, title="decode_times", description="Whether to decode times"
-            ),
-            variable: str = Query(..., description="Xarray Variable"),
-            drop_dim: Optional[str] = Query(None, description="Dimension to drop"),
-            time_slice: str = Query(
-                None, description="Slice of time to read (if available)"
-            ),
-            post_process=Depends(self.process_dependency),
-            rescale: Optional[List[Tuple[float, ...]]] = Depends(RescalingParams),
-            color_formula: Optional[str] = Query(
-                None,
-                title="Color Formula",
-                description=(
-                    "rio-color formula (info: https://github.com/mapbox/rio-color)"
+            z: Annotated[
+                int,
+                Path(
+                    description="Identifier (Z) selecting one of the scales defined in the TileMatrixSet and representing the scaleDenominator the tile.",
                 ),
-            ),
+            ],
+            x: Annotated[
+                int,
+                Path(
+                    description="Column (X) index of the tile on the selected TileMatrix. It cannot exceed the MatrixHeight-1 for the selected TileMatrix.",
+                ),
+            ],
+            y: Annotated[
+                int,
+                Path(
+                    description="Row (Y) index of the tile on the selected TileMatrix. It cannot exceed the MatrixWidth-1 for the selected TileMatrix.",
+                ),
+            ],
+            url: Annotated[str, Query(description="Dataset URL")],
+            variable: Annotated[
+                str,
+                Query(description="Xarray Variable"),
+            ],
+            tileMatrixSetId: Annotated[  # type: ignore
+                Literal[tuple(self.supported_tms.list())],
+                f"Identifier selecting one of the TileMatrixSetId supported (default: '{self.default_tms}')",
+            ] = self.default_tms,
+            scale: Annotated[  # type: ignore
+                conint(gt=0, le=4), "Tile size scale. 1=256x256, 2=512x512..."
+            ] = 1,
+            format: Annotated[
+                ImageType,
+                "Default will be automatically defined if the output image needs a mask (png) or not (jpeg).",
+            ] = None,
+            multiscale: Annotated[
+                bool,
+                Query(
+                    title="multiscale",
+                    description="Whether the dataset has multiscale groups (Zoom levels)",
+                ),
+            ] = False,
+            reference: Annotated[
+                bool,
+                Query(
+                    title="reference",
+                    description="Whether the dataset is a kerchunk reference",
+                ),
+            ] = False,
+            decode_times: Annotated[
+                bool,
+                Query(
+                    title="decode_times",
+                    description="Whether to decode times",
+                ),
+            ] = True,
+            drop_dim: Annotated[
+                Optional[str],
+                Query(description="Dimension to drop"),
+            ] = None,
+            time_slice: Annotated[
+                Optional[str], Query(description="Slice of time to read (if available)")
+            ] = None,
+            post_process=Depends(self.process_dependency),
+            rescale=Depends(self.rescale_dependency),
+            color_formula=Depends(ColorFormulaParams),
             colormap=Depends(self.colormap_dependency),
             render_params=Depends(self.render_dependency),
         ) -> Response:
             """Create map tile from a dataset."""
-            tms = self.supported_tms.get(TileMatrixSetId)
+            tms = self.supported_tms.get(tileMatrixSetId)
 
             with self.reader(
                 url,
@@ -169,11 +215,9 @@ class ZarrTilerFactory(BaseTilerFactory):
                 time_slice=time_slice,
                 tms=tms,
             ) as src_dst:
+
                 image = src_dst.tile(
-                    x,
-                    y,
-                    z,
-                    tilesize=scale * 256,
+                    x, y, z, tilesize=scale * 256, nodata=src_dst.input.rio.nodata
                 )
 
             if post_process:
@@ -185,18 +229,14 @@ class ZarrTilerFactory(BaseTilerFactory):
             if color_formula:
                 image.apply_color_formula(color_formula)
 
-            if colormap:
-                image = image.apply_colormap(colormap)
-            if not format:
-                format = ImageType.jpeg if image.mask.all() else ImageType.png
-
-            content = image.render(
-                img_format=format.driver,
-                **format.profile,
+            content, media_type = render_image(
+                image,
+                output_format=format,
+                colormap=colormap,
                 **render_params,
             )
 
-            return Response(content, media_type=format.mediatype)
+            return Response(content, media_type=media_type)
 
         @self.router.get(
             "/tilejson.json",
@@ -205,68 +245,79 @@ class ZarrTilerFactory(BaseTilerFactory):
             response_model_exclude_none=True,
         )
         @self.router.get(
-            "/{TileMatrixSetId}/tilejson.json",
+            "/{tileMatrixSetId}/tilejson.json",
             response_model=TileJSON,
             responses={200: {"description": "Return a tilejson"}},
             response_model_exclude_none=True,
         )
         def tilejson_endpoint(  # type: ignore
             request: Request,
-            TileMatrixSetId: Literal[  # type: ignore
-                tuple(self.supported_tms.list())
-            ] = Query(
-                self.default_tms,
-                description=f"TileMatrixSet Name (default: '{self.default_tms}')",
-            ),
-            url: str = Query(..., description="Dataset URL"),
-            group: Optional[int] = Query(
-                None, description="Select a specific Zarr Group (Zoom Level)."
-            ),
-            multiscale: bool = Query(  # noqa
-                False,
-                title="multiscale",
-                description="Whether the dataset has multiscale groups (Zoom levels)",
-            ),
-            reference: bool = Query(
-                False,
-                title="reference",
-                description="Whether the src_path is a kerchunk reference",
-            ),
-            decode_times: bool = Query(
-                True, title="decode_times", description="Whether to decode times"
-            ),
-            variable: str = Query(..., description="Xarray Variable"),
-            drop_dim: Optional[str] = Query(
-                None, description="Dimension to drop"
-            ),  # noqa
-            time_slice: str = Query(
-                None, description="Slice of time to read (if available)"
-            ),  # noqa
-            tile_format: Optional[ImageType] = Query(
-                None, description="Output image type. Default is auto."
-            ),
-            tile_scale: int = Query(
-                1, gt=0, lt=4, description="Tile size scale. 1=256x256, 2=512x512..."
-            ),
-            minzoom: Optional[int] = Query(
-                None, description="Overwrite default minzoom."
-            ),
-            maxzoom: Optional[int] = Query(
-                None, description="Overwrite default maxzoom."
-            ),
-            post_process=Depends(self.process_dependency),  # noqa
-            rescale: Optional[List[Tuple[float, ...]]] = Depends(
-                RescalingParams
-            ),  # noqa
-            color_formula: Optional[str] = Query(  # noqa
-                None,
-                title="Color Formula",
-                description=(
-                    "rio-color formula (info: https://github.com/mapbox/rio-color)"
+            url: Annotated[str, Query(description="Dataset URL")],
+            variable: Annotated[
+                str,
+                Query(description="Xarray Variable"),
+            ],
+            tileMatrixSetId: Annotated[  # type: ignore
+                Literal[tuple(self.supported_tms.list())],
+                f"Identifier selecting one of the TileMatrixSetId supported (default: '{self.default_tms}')",
+            ] = self.default_tms,
+            group: Annotated[
+                Optional[int],
+                Query(description="Select a specific Zarr Group (Zoom Level)."),
+            ] = None,
+            multiscale: Annotated[
+                bool,
+                Query(
+                    title="multiscale",
+                    description="Whether the dataset has multiscale groups (Zoom levels)",
                 ),
-            ),
-            colormap=Depends(self.colormap_dependency),  # noqa
-            render_params=Depends(self.render_dependency),  # noqa
+            ] = False,
+            reference: Annotated[
+                bool,
+                Query(
+                    title="reference",
+                    description="Whether the dataset is a kerchunk reference",
+                ),
+            ] = False,
+            decode_times: Annotated[
+                bool,
+                Query(
+                    title="decode_times",
+                    description="Whether to decode times",
+                ),
+            ] = True,
+            drop_dim: Annotated[
+                Optional[str],
+                Query(description="Dimension to drop"),
+            ] = None,
+            time_slice: Annotated[
+                Optional[str], Query(description="Slice of time to read (if available)")
+            ] = None,
+            tile_format: Annotated[
+                Optional[ImageType],
+                Query(
+                    description="Default will be automatically defined if the output image needs a mask (png) or not (jpeg).",
+                ),
+            ] = None,
+            tile_scale: Annotated[
+                int,
+                Query(
+                    gt=0, lt=4, description="Tile size scale. 1=256x256, 2=512x512..."
+                ),
+            ] = 1,
+            minzoom: Annotated[
+                Optional[int],
+                Query(description="Overwrite default minzoom."),
+            ] = None,
+            maxzoom: Annotated[
+                Optional[int],
+                Query(description="Overwrite default maxzoom."),
+            ] = None,
+            post_process=Depends(self.process_dependency),
+            rescale=Depends(self.rescale_dependency),
+            color_formula=Depends(ColorFormulaParams),
+            colormap=Depends(self.colormap_dependency),
+            render_params=Depends(self.render_dependency),
         ) -> Dict:
             """Return TileJSON document for a dataset."""
             route_params = {
@@ -274,7 +325,7 @@ class ZarrTilerFactory(BaseTilerFactory):
                 "x": "{x}",
                 "y": "{y}",
                 "scale": tile_scale,
-                "TileMatrixSetId": TileMatrixSetId,
+                "tileMatrixSetId": tileMatrixSetId,
             }
             if tile_format:
                 route_params["format"] = tile_format.value
@@ -296,7 +347,7 @@ class ZarrTilerFactory(BaseTilerFactory):
             if qs:
                 tiles_url += f"?{urlencode(qs)}"
 
-            tms = self.supported_tms.get(TileMatrixSetId)
+            tms = self.supported_tms.get(tileMatrixSetId)
 
             with self.reader(
                 url,
@@ -326,13 +377,18 @@ class ZarrTilerFactory(BaseTilerFactory):
             response_model_exclude_none=True,
         )
         def histogram(
-            url: str = Query(..., description="Dataset URL"),
-            variable: str = Query(..., description="Variable"),
-            reference: bool = Query(
-                False,
-                title="reference",
-                description="Whether the src_path is a kerchunk reference",
-            ),
+            url: Annotated[str, Query(description="Dataset URL")],
+            variable: Annotated[
+                str,
+                Query(description="Xarray Variable"),
+            ],
+            reference: Annotated[
+                bool,
+                Query(
+                    title="reference",
+                    description="Whether the dataset is a kerchunk reference",
+                ),
+            ] = False,
         ):
             with self.reader(url, variable=variable, reference=reference) as src_dst:
                 boolean_mask = ~np.isnan(src_dst.input)
@@ -348,66 +404,75 @@ class ZarrTilerFactory(BaseTilerFactory):
                 return hist_dict
 
         @self.router.get("/map", response_class=HTMLResponse)
-        @self.router.get("/{TileMatrixSetId}/map", response_class=HTMLResponse)
+        @self.router.get("/{tileMatrixSetId}/map", response_class=HTMLResponse)
         def map_viewer(
             request: Request,
-            TileMatrixSetId: Literal[tuple(self.supported_tms.list())] = Query(  # type: ignore
-                self.default_tms,
-                description=f"TileMatrixSet Name (default: '{self.default_tms}')",
-            ),  # noqa
-            url: Optional[str] = Query(None, description="Dataset URL"),  # noqa
-            group: Optional[int] = Query(  # noqa
-                None, description="Select a specific Zarr Group (Zoom Level)."
-            ),
-            multiscale: Optional[bool] = Query(  # noqa
-                False,
-                title="multiscale",
-                description="Whether the dataset has multiscale groups (Zoom levels)",
-            ),
-            reference: Optional[bool] = Query(  # noqa
-                False,
-                title="reference",
-                description="Whether the src_path is a kerchunk reference",
-            ),
-            decode_times: Optional[bool] = Query(  # noqa
-                True, title="decode_times", description="Whether to decode times"
-            ),
-            variable: Optional[str] = Query(
-                None, description="Xarray Variable"
-            ),  # noqa
-            drop_dim: Optional[str] = Query(
-                None, description="Dimension to drop"
-            ),  # noqa
-            time_slice: str = Query(
-                None, description="Slice of time to read (if available)"
-            ),  # noqa
-            tile_format: Optional[ImageType] = Query(
-                None, description="Output image type. Default is auto."
-            ),  # noqa
-            tile_scale: int = Query(
-                1, gt=0, lt=4, description="Tile size scale. 1=256x256, 2=512x512..."
-            ),  # noqa
-            minzoom: Optional[int] = Query(
-                None, description="Overwrite default minzoom."
-            ),  # noqa
-            maxzoom: Optional[int] = Query(
-                None, description="Overwrite default maxzoom."
-            ),  # noqa
-            layer_params=Depends(self.layer_dependency),  # noqa
-            dataset_params=Depends(self.dataset_dependency),  # noqa
-            post_process=Depends(self.process_dependency),  # noqa
-            rescale: Optional[List[Tuple[float, ...]]] = Depends(
-                RescalingParams
-            ),  # noqa
-            color_formula: Optional[str] = Query(  # noqa
-                None,
-                title="Color Formula",
-                description="rio-color formula (info: https://github.com/mapbox/rio-color)",
-            ),
-            colormap=Depends(self.colormap_dependency),  # noqa
-            render_params=Depends(self.render_dependency),  # noqa
-            reader_params=Depends(self.reader_dependency),  # noqa
-            env=Depends(self.environment_dependency),  # noqa
+            url: Annotated[Optional[str], Query(description="Dataset URL")] = None,
+            tileMatrixSetId: Annotated[  # type: ignore
+                Literal[tuple(self.supported_tms.list())],
+                f"Identifier selecting one of the TileMatrixSetId supported (default: '{self.default_tms}')",
+            ] = self.default_tms,
+            variable: Annotated[
+                Optional[str],
+                Query(description="Xarray Variable"),
+            ] = None,
+            group: Annotated[
+                Optional[int],
+                Query(description="Select a specific Zarr Group (Zoom Level)."),
+            ] = None,
+            multiscale: Annotated[
+                bool,
+                Query(
+                    title="multiscale",
+                    description="Whether the dataset has multiscale groups (Zoom levels)",
+                ),
+            ] = False,
+            reference: Annotated[
+                bool,
+                Query(
+                    title="reference",
+                    description="Whether the dataset is a kerchunk reference",
+                ),
+            ] = False,
+            decode_times: Annotated[
+                bool,
+                Query(
+                    title="decode_times",
+                    description="Whether to decode times",
+                ),
+            ] = True,
+            drop_dim: Annotated[
+                Optional[str],
+                Query(description="Dimension to drop"),
+            ] = None,
+            time_slice: Annotated[
+                Optional[str], Query(description="Slice of time to read (if available)")
+            ] = None,
+            tile_format: Annotated[
+                Optional[ImageType],
+                Query(
+                    description="Default will be automatically defined if the output image needs a mask (png) or not (jpeg).",
+                ),
+            ] = None,
+            tile_scale: Annotated[
+                int,
+                Query(
+                    gt=0, lt=4, description="Tile size scale. 1=256x256, 2=512x512..."
+                ),
+            ] = 1,
+            minzoom: Annotated[
+                Optional[int],
+                Query(description="Overwrite default minzoom."),
+            ] = None,
+            maxzoom: Annotated[
+                Optional[int],
+                Query(description="Overwrite default maxzoom."),
+            ] = None,
+            post_process=Depends(self.process_dependency),
+            rescale=Depends(self.rescale_dependency),
+            color_formula=Depends(ColorFormulaParams),
+            colormap=Depends(self.colormap_dependency),
+            render_params=Depends(self.render_dependency),
         ):
             """Return map Viewer."""
             templates = Jinja2Templates(
@@ -416,12 +481,12 @@ class ZarrTilerFactory(BaseTilerFactory):
             )
             if url:
                 tilejson_url = self.url_for(
-                    request, "tilejson_endpoint", TileMatrixSetId=TileMatrixSetId
+                    request, "tilejson_endpoint", tileMatrixSetId=tileMatrixSetId
                 )
                 if request.query_params._list:
                     tilejson_url += f"?{urlencode(request.query_params._list)}"
 
-                tms = self.supported_tms.get(TileMatrixSetId)
+                tms = self.supported_tms.get(tileMatrixSetId)
                 return templates.TemplateResponse(
                     name="map.html",
                     context={

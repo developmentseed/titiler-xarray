@@ -28,6 +28,8 @@ api_settings = ApiSettings()
 
 app = FastAPI(
     title=api_settings.name,
+    openapi_url="/api",
+    docs_url="/api.html",
     version=titiler_version,
     root_path=api_settings.root_path,
 )
@@ -55,7 +57,7 @@ if api_settings.cors_origins:
         CORSMiddleware,
         allow_origins=api_settings.cors_origins,
         allow_credentials=True,
-        allow_methods=["GET"],
+        allow_methods=api_settings.cors_allow_methods,
         allow_headers=["*"],
     )
 
