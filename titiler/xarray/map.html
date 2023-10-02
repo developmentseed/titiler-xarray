@@ -21,8 +21,8 @@
                 width: 100%;
                 height: 100%;
                 background-color: rgba(0, 0, 0, 0.7);
-            } 
-    
+            }
+
             /* Container for the popup box */
             .popup-shown {
                 display: flex;
@@ -41,7 +41,7 @@
                 margin-top: 20px;
                 z-index: 1000;
                 overflow-x: hidden;
-                overflow-y: scroll;             
+                overflow-y: scroll;
             }
 
             /* Close button */
@@ -52,7 +52,7 @@
                 position: relative;
                 bottom: 140px;
                 left: 430px;
-            }                 
+            }
         </style>
     </head>
     <body>
@@ -109,7 +109,7 @@
                     maxZoom: maxZoom
                 });
 
-                if ("{{ tms.identifier }}" === "WebMercatorQuad") {
+                if ("{{ tms.id }}" === "WebMercatorQuad") {
                     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     }).addTo(map);
