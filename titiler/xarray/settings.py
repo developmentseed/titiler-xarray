@@ -2,7 +2,7 @@
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
+from typing import Optional
 
 class ApiSettings(BaseSettings):
     """FASTAPI application settings."""
@@ -25,3 +25,18 @@ class ApiSettings(BaseSettings):
     def parse_cors_allow_methods(cls, v):
         """Parse CORS allowed methods."""
         return [method.strip().upper() for method in v.split(",")]
+
+class CacheSettings(BaseSettings):
+    """Cache settings"""
+
+    endpoint: Optional[str] = None
+    ttl: int = 3600
+    namespace: str = ""
+
+    class Config:
+        """model config"""
+
+        env_file = ".env"
+        env_prefix = "CACHE_"
+
+cache_setting = CacheSettings()

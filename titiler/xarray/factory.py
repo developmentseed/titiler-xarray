@@ -22,7 +22,6 @@ from titiler.core.resources.responses import JSONResponse
 from titiler.core.utils import render_image
 from titiler.xarray.reader import ZarrReader
 
-
 @dataclass
 class ZarrTilerFactory(BaseTilerFactory):
     """Zarr Tiler Factory."""
