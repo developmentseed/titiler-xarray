@@ -19,14 +19,21 @@ def xarray_open_dataset(
     group: Optional[Any] = None,
     reference: Optional[bool] = False,
     decode_times: Optional[bool] = True,
+    consolidated: Optional[bool] = True,
 ) -> xarray.Dataset:
     """Open dataset."""
     xr_open_args: Dict[str, Any] = {
-        "engine": "zarr",
         "decode_coords": "all",
         "decode_times": decode_times,
-        "consolidated": True,
     }
+
+    if src_path.endswith(".nc"):
+        xr_open_args['engine'] = "netcdf4"
+    else:
+        xr_open_args['engine'] = "zarr"
+        xr_open_args['consolidated'] = consolidated
+
+
     if group:
         xr_open_args["group"] = group
 
@@ -96,6 +103,7 @@ class ZarrReader(XarrayReader):
     reference: bool = attr.ib(default=False)
     decode_times: bool = attr.ib(default=False)
     group: Optional[Any] = attr.ib(default=None)
+    consolidated: Optional[bool] = attr.ib(default=True)
 
     # xarray.DataArray options
     time_slice: Optional[str] = attr.ib(default=None)
@@ -123,6 +131,7 @@ class ZarrReader(XarrayReader):
                 self.src_path,
                 group=self.group,
                 reference=self.reference,
+                consolidated=self.consolidated,
             ),
         )
         self.input = get_variable(
@@ -147,11 +156,13 @@ class ZarrReader(XarrayReader):
         src_path: str,
         group: Optional[Any] = None,
         reference: Optional[bool] = False,
+        consolidated: Optional[bool] = True,
     ) -> List[str]:
         """List available variable in a dataset."""
         with xarray_open_dataset(
             src_path,
             group=group,
             reference=reference,
+            consolidated=consolidated,
         ) as ds:
             return list(ds.data_vars)  # type: ignore

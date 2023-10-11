@@ -25,6 +25,7 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
+    "netCDF4",
     "xarray",
     "rioxarray",
     "zarr",
