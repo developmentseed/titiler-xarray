@@ -1,6 +1,6 @@
 # Releasing
 
-This repository deploys to 2 stacks (one production and one development) via github actions. These deployments are intended to be services in beta for demonstration the NASA VEDA project.
+This repository deploys to 2 stacks (one production and one development) via github actions. These deployments are intended to be services in beta for demonstration in [NASA's VEDA project](https://www.earthdata.nasa.gov/esds/veda).
 
 The production stack will be deployed when main is tagged (aka "released"). The production stack has the domain https://prod-titiler-xarray.delta-backend.com.
 
