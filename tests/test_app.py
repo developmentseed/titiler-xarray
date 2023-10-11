@@ -122,9 +122,8 @@ def histogram_test(app, datastore, ds_params):
         params=ds_params["params"],
     )
     assert response.status_code == 200
-    with open(f"{datastore.replace(DATA_DIR, f'{DATA_DIR}/responses').replace('.', '_')}_histogram.json", "w") as f:
-        #assert response.json() == json.load(f)
-        f.write(json.dumps(response.json(), indent=2))
+    with open(f"{datastore.replace(DATA_DIR, f'{DATA_DIR}/responses').replace('.', '_')}_histogram.json", "r") as f:
+        assert response.json() == json.load(f)
 
 def test_histogram_test(app):
     return histogram_test(app, test_zarr_store, test_zarr_store_params)
