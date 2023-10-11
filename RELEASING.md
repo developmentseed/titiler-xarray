@@ -12,5 +12,5 @@ Workflow:
 2. Once merged, https://dev-titiler-xarray.delta-backend.com will be deployed and should be manually tested.
 3. When it is time to release changes to production, dev will be merged to main (no PR necessary).
 4. The development deployment will be updated to the latest commit on main. This should be manually tested again.
-5. When ready, a release will be created on main by creating a tag. This will trigger the production deployment.
+5. When ready, production will be "released" by creating and pushing a tag on main. This will trigger the production deployment.
 6. The production deployment (https://prod-titiler-xarray.delta-backend.com) should be manually tested.
