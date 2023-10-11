@@ -9,9 +9,8 @@ The development stack will be deployed upon pushes to the dev and main branches.
 ## Release Workflow:
 
 ### Pre-release steps
-1. PRs are made to `dev` branch. PRs should include tests and documentation. pytest should succeed before merging.
+1. PRs are made to `dev` branch. PRs should include tests and documentation. pytest should succeed before merging. If appropriate, changes should be added to the CHANGELOG.md file under "Next release".
 2. Once merged, https://dev-titiler-xarray.delta-backend.com will be deployed and should be manually tested.
-   a. If appropriate, changes should be added to the CHANGELOG.md file under "Next release" and committed to dev.
 
 ### Release steps
 
