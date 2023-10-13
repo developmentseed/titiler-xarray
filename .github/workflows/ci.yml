@@ -11,6 +11,7 @@ on:
     paths:
       # Only run test and docker publish if some code have changed
       - 'pyproject.toml'
+      - 'infrastructure/aws/**'
       - 'titiler/**'
       - '.pre-commit-config.yaml'
   # Run tests on pull requests.
