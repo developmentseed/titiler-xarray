@@ -88,7 +88,7 @@ class LambdaStack(Stack):
                 self,
                 f"{id}-500-Errors",
                 display_name=f"{id} Gateway 500 Errors",
-                topic_name=f"{id}-500-Errors",
+                topic_name=f"{id}-Gateway-500-Errors",
             )
             # Subscribe email to the topic
             email_address = settings.alarm_email
