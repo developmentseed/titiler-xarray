@@ -86,9 +86,9 @@ class LambdaStack(Stack):
         if settings.alarm_email:
             topic = sns.Topic(
                 self,
-                "DevTitilerXarray500Errors",
-                display_name="Dev TitilerXarray Gateway 500 Errors",
-                topic_name="DevTitilerXarray500Errors",
+                f"{id}-500-Errors",
+                display_name=f"{id} Gateway 500 Errors",
+                topic_name=f"{id}-500-Errors",
             )
             # Subscribe email to the topic
             email_address = settings.alarm_email
