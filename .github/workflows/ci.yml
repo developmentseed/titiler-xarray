@@ -53,7 +53,7 @@ jobs:
   deploy:
     needs: [tests]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || startsWith(github.ref, 'refs/tags/v')
   
     defaults:
       run:
@@ -61,16 +61,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-        # Deploy the dev branch on pushes to dev
-        if: github.ref == 'refs/heads/dev'
-        with:
-          ref: dev
-
-      - uses: actions/checkout@v3
-        # Deploy the main branch when the push is to main or a new tag is pushed
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
-        with:
-          ref: main
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
