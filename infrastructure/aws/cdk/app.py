@@ -107,7 +107,7 @@ class LambdaStack(Stack):
                 evaluation_periods=1,
                 threshold=1,
                 alarm_description="Alarm if 500 errors are detected",
-                alarm_name="ApiGateway500Alarm",
+                alarm_name=f"{id}-ApiGateway500Alarm",
                 actions_enabled=True,
             )
             alarm.add_alarm_action(cloudwatch_actions.SnsAction(topic))
