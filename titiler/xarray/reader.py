@@ -27,8 +27,7 @@ def xarray_open_dataset(
     file_handler = src_path
     xr_open_args: Dict[str, Any] = {
         "decode_coords": "all",
-        "decode_times": decode_times,
-        "cache": False
+        "decode_times": decode_times
     }
 
     # NetCDF arguments 
