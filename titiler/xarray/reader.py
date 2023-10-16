@@ -6,13 +6,14 @@ from typing import Any, Dict, List, Optional
 import attr
 import fsspec
 import numpy
+import s3fs
 import xarray
 from morecantile import TileMatrixSet
 from rasterio.crs import CRS
 from rio_tiler.constants import WEB_MERCATOR_TMS, WGS84_CRS
 from rio_tiler.io.xarray import XarrayReader
 from rio_tiler.types import BBox
-import s3fs
+
 
 def xarray_open_dataset(
     src_path: str,
@@ -27,19 +28,22 @@ def xarray_open_dataset(
     file_handler = src_path
     xr_open_args: Dict[str, Any] = {
         "decode_coords": "all",
-        "decode_times": decode_times
+        "decode_times": decode_times,
     }
 
-    # NetCDF arguments 
+    # NetCDF arguments
     if src_path.endswith(".nc"):
         if src_path.startswith("s3://"):
             fs = s3fs.S3FileSystem()
             file_handler = fs.open(src_path)
-        xr_open_args['engine'] = "h5netcdf"
+        elif src_path.startswith("http"):
+            fs = fsspec.filesystem("http")
+            file_handler = fs.open(src_path)
+        xr_open_args["engine"] = "h5netcdf"
     else:
         # Zarr arguments
-        xr_open_args['engine'] = "zarr"
-        xr_open_args['consolidated'] = consolidated
+        xr_open_args["engine"] = "zarr"
+        xr_open_args["consolidated"] = consolidated
 
     # Arguments for kerchunk reference
     if reference:
@@ -54,7 +58,6 @@ def xarray_open_dataset(
     # Argument if we're opening a datatree
     if group:
         xr_open_args["group"] = group
-
     ds = xarray.open_dataset(file_handler, **xr_open_args)
     return ds
 

@@ -66,7 +66,9 @@ class ZarrTilerFactory(BaseTilerFactory):
             ] = True,
         ) -> List[str]:
             """return available variables."""
-            return self.reader.list_variables(url, group=group, reference=reference, consolidated=consolidated)
+            return self.reader.list_variables(
+                url, group=group, reference=reference, consolidated=consolidated
+            )
 
         @self.router.get(
             "/info",
@@ -113,7 +115,7 @@ class ZarrTilerFactory(BaseTilerFactory):
                     title="consolidated",
                     description="Whether to expect and open zarr store with consolidated metadata",
                 ),
-            ] = True,            
+            ] = True,
         ) -> Info:
             """Return dataset's basic info."""
             with self.reader(
@@ -222,7 +224,7 @@ class ZarrTilerFactory(BaseTilerFactory):
                     title="consolidated",
                     description="Whether to expect and open zarr store with consolidated metadata",
                 ),
-            ] = True
+            ] = True,
         ) -> Response:
             """Create map tile from a dataset."""
             tms = self.supported_tms.get(tileMatrixSetId)
@@ -236,7 +238,7 @@ class ZarrTilerFactory(BaseTilerFactory):
                 drop_dim=drop_dim,
                 time_slice=time_slice,
                 tms=tms,
-                consolidated=consolidated
+                consolidated=consolidated,
             ) as src_dst:
 
                 image = src_dst.tile(
@@ -347,7 +349,7 @@ class ZarrTilerFactory(BaseTilerFactory):
                     title="consolidated",
                     description="Whether to expect and open zarr store with consolidated metadata",
                 ),
-            ] = True
+            ] = True,
         ) -> Dict:
             """Return TileJSON document for a dataset."""
             route_params = {
@@ -386,7 +388,7 @@ class ZarrTilerFactory(BaseTilerFactory):
                 reference=reference,
                 decode_times=decode_times,
                 tms=tms,
-                consolidated=consolidated
+                consolidated=consolidated,
             ) as src_dst:
                 # see https://github.com/corteva/rioxarray/issues/645
                 minx, miny, maxx, maxy = zip(
@@ -428,7 +430,9 @@ class ZarrTilerFactory(BaseTilerFactory):
                 ),
             ] = True,
         ):
-            with self.reader(url, variable=variable, reference=reference, consolidated=consolidated) as src_dst:
+            with self.reader(
+                url, variable=variable, reference=reference, consolidated=consolidated
+            ) as src_dst:
                 boolean_mask = ~np.isnan(src_dst.input)
                 data_values = src_dst.input.values[boolean_mask]
                 counts, values = np.histogram(data_values, bins=10)

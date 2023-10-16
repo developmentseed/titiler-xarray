@@ -11,21 +11,32 @@ test_unconsolidated_store = os.path.join(DATA_DIR, "unconsolidated.zarr")
 
 test_zarr_store_params = {
     "params": {"url": test_zarr_store, "variable": "CDD0", "decode_times": False},
-    "variables":  ["CDD0", "DISPH", "FROST_DAYS", "GWETPROF"]
+    "variables": ["CDD0", "DISPH", "FROST_DAYS", "GWETPROF"],
 }
 
 test_reference_store_params = {
-    "params": { "url": test_reference_store, "variable": "value", "reference": True, "decode_times": False },
-    "variables": ["value"]
+    "params": {
+        "url": test_reference_store,
+        "variable": "value",
+        "reference": True,
+        "decode_times": False,
+    },
+    "variables": ["value"],
 }
 test_netcdf_store_params = {
     "params": {"url": test_netcdf_store, "variable": "data", "decode_times": False},
-    "variables": ["data"]
+    "variables": ["data"],
 }
 test_unconsolidated_store_params = {
-    "params": {"url": test_unconsolidated_store, "variable": "var1", "decode_times": False, "consolidated": False},
-    "variables": ["var1", "var2"]
+    "params": {
+        "url": test_unconsolidated_store,
+        "variable": "var1",
+        "decode_times": False,
+        "consolidated": False,
+    },
+    "variables": ["var1", "var2"],
 }
+
 
 def get_variables_test(app, ds_params):
     response = app.get("/variables", params=ds_params["params"])
@@ -37,17 +48,22 @@ def get_variables_test(app, ds_params):
     assert timings[0].startswith("total;dur=")
     assert timings[1].lstrip().startswith("1-xarray-open_dataset;dur=")
 
+
 def test_get_variables_test(app):
-   return get_variables_test(app, test_zarr_store_params)
+    return get_variables_test(app, test_zarr_store_params)
+
 
 def test_get_variables_reference(app):
     return get_variables_test(app, test_reference_store_params)
 
+
 def test_get_variables_netcdf(app):
     return get_variables_test(app, test_netcdf_store_params)
 
+
 def test_get_variables_unconsolidated(app):
     return get_variables_test(app, test_unconsolidated_store_params)
+
 
 def get_info_test(app, datastore, ds_params):
     response = app.get(
@@ -55,20 +71,30 @@ def get_info_test(app, datastore, ds_params):
         params=ds_params["params"],
     )
     assert response.status_code == 200
-    with open(f"{datastore.replace(DATA_DIR, f'{DATA_DIR}/responses').replace('.', '_')}_info.json", "r") as f:
+    with open(
+        f"{datastore.replace(DATA_DIR, f'{DATA_DIR}/responses').replace('.', '_')}_info.json",
+        "r",
+    ) as f:
         assert response.json() == json.load(f)
+
 
 def test_get_info_test(app):
     return get_info_test(app, test_zarr_store, test_zarr_store_params)
 
+
 def test_get_info_reference(app):
     return get_info_test(app, test_reference_store, test_reference_store_params)
+
 
 def test_get_info_netcdf(app):
     return get_info_test(app, test_netcdf_store, test_netcdf_store_params)
 
+
 def test_get_info_unconsolidated(app):
-    return get_info_test(app, test_unconsolidated_store, test_unconsolidated_store_params)
+    return get_info_test(
+        app, test_unconsolidated_store, test_unconsolidated_store_params
+    )
+
 
 def get_tilejson_test(app, datastore, ds_params):
     response = app.get(
@@ -76,20 +102,30 @@ def get_tilejson_test(app, datastore, ds_params):
         params=ds_params["params"],
     )
     assert response.status_code == 200
-    with open(f"{datastore.replace(DATA_DIR, f'{DATA_DIR}/responses').replace('.', '_')}_tilejson.json", "r") as f:
+    with open(
+        f"{datastore.replace(DATA_DIR, f'{DATA_DIR}/responses').replace('.', '_')}_tilejson.json",
+        "r",
+    ) as f:
         assert response.json() == json.load(f)
+
 
 def test_get_tilejson_test(app):
     return get_tilejson_test(app, test_zarr_store, test_zarr_store_params)
 
+
 def test_get_tilejson_reference(app):
     return get_tilejson_test(app, test_reference_store, test_reference_store_params)
+
 
 def test_get_tilejson_netcdf(app):
     return get_tilejson_test(app, test_netcdf_store, test_netcdf_store_params)
 
+
 def test_get_tilejson_unconsolidated(app):
-    return get_tilejson_test(app, test_unconsolidated_store, test_unconsolidated_store_params)
+    return get_tilejson_test(
+        app, test_unconsolidated_store, test_unconsolidated_store_params
+    )
+
 
 def get_tile_test(app, datastore, ds_params):
     response = app.get(
@@ -104,17 +140,24 @@ def get_tile_test(app, datastore, ds_params):
     assert timings[1].lstrip().startswith("1-xarray-open_dataset;dur=")
     assert timings[2].lstrip().startswith("2-rioxarray-reproject;dur=")
 
+
 def test_get_tile_test(app):
     return get_tile_test(app, test_zarr_store, test_zarr_store_params)
+
 
 def test_get_tile_reference(app):
     return get_tile_test(app, test_reference_store, test_reference_store_params)
 
+
 def test_get_tile_netcdf(app):
     return get_tile_test(app, test_netcdf_store, test_netcdf_store_params)
 
+
 def test_get_tile_unconsolidated(app):
-    return get_tile_test(app, test_unconsolidated_store, test_unconsolidated_store_params)
+    return get_tile_test(
+        app, test_unconsolidated_store, test_unconsolidated_store_params
+    )
+
 
 def histogram_test(app, datastore, ds_params):
     response = app.get(
@@ -122,20 +165,30 @@ def histogram_test(app, datastore, ds_params):
         params=ds_params["params"],
     )
     assert response.status_code == 200
-    with open(f"{datastore.replace(DATA_DIR, f'{DATA_DIR}/responses').replace('.', '_')}_histogram.json", "r") as f:
+    with open(
+        f"{datastore.replace(DATA_DIR, f'{DATA_DIR}/responses').replace('.', '_')}_histogram.json",
+        "r",
+    ) as f:
         assert response.json() == json.load(f)
+
 
 def test_histogram_test(app):
     return histogram_test(app, test_zarr_store, test_zarr_store_params)
 
+
 def test_histogram_reference(app):
     return histogram_test(app, test_reference_store, test_reference_store_params)
+
 
 def test_histogram_netcdf(app):
     return histogram_test(app, test_netcdf_store, test_netcdf_store_params)
 
+
 def test_histogram_unconsolidated(app):
-    return histogram_test(app, test_unconsolidated_store, test_unconsolidated_store_params)
+    return histogram_test(
+        app, test_unconsolidated_store, test_unconsolidated_store_params
+    )
+
 
 def test_histogram_error(app):
     response = app.get(
@@ -156,11 +209,13 @@ def test_histogram_error(app):
         ]
     }
 
+
 def test_map_without_params(app):
     response = app.get("/map")
     assert response.status_code == 200
     assert response.headers["Content-Type"] == "text/html; charset=utf-8"
     assert find_string_in_stream(response, "Step 1: Enter the URL of your Zarr store")
+
 
 def test_map_with_params(app):
     response = app.get("/map", params={"url": test_zarr_store, "variable": "CDD0"})
