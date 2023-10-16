@@ -58,7 +58,8 @@ def xarray_open_dataset(
     if group:
         xr_open_args["group"] = group
 
-    return xarray.open_dataset(file_handler, **xr_open_args)
+    ds = xarray.open_dataset(file_handler, **xr_open_args)
+    return ds
 
 
 def get_variable(
