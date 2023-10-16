@@ -12,7 +12,7 @@ from rasterio.crs import CRS
 from rio_tiler.constants import WEB_MERCATOR_TMS, WGS84_CRS
 from rio_tiler.io.xarray import XarrayReader
 from rio_tiler.types import BBox
-
+import s3fs
 
 def xarray_open_dataset(
     src_path: str,
@@ -22,31 +22,42 @@ def xarray_open_dataset(
     consolidated: Optional[bool] = True,
 ) -> xarray.Dataset:
     """Open dataset."""
+
+    # Default arguments for xarray.open_dataset
+    file_handler = src_path
     xr_open_args: Dict[str, Any] = {
         "decode_coords": "all",
         "decode_times": decode_times,
+        "cache": False
     }
 
+    # NetCDF arguments 
     if src_path.endswith(".nc"):
-        xr_open_args['engine'] = "netcdf4"
+        if src_path.startswith("s3://"):
+            fs = s3fs.S3FileSystem()
+            file_handler = fs.open(src_path)
+        xr_open_args['engine'] = "h5netcdf"
     else:
+        # Zarr arguments
         xr_open_args['engine'] = "zarr"
         xr_open_args['consolidated'] = consolidated
 
-
-    if group:
-        xr_open_args["group"] = group
-
+    # Arguments for kerchunk reference
     if reference:
         fs = fsspec.filesystem(
             "reference",
             fo=src_path,
             remote_options={"anon": True},
         )
-        src_path = fs.get_mapper("")
+        file_handler = fs.get_mapper("")
         xr_open_args["backend_kwargs"] = {"consolidated": False}
 
-    return xarray.open_dataset(src_path, **xr_open_args)
+    # Argument if we're opening a datatree
+    if group:
+        xr_open_args["group"] = group
+
+    ds = xarray.open_dataset(file_handler, **xr_open_args)
+    return ds
 
 
 def get_variable(
