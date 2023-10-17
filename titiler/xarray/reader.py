@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional
 import attr
 import fsspec
 import numpy
-import metpy.units as units
 import s3fs
 import xarray
 from morecantile import TileMatrixSet
