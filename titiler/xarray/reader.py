@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 import attr
 import fsspec
 import numpy
+import s3fs
 import xarray
 from morecantile import TileMatrixSet
 from rasterio.crs import CRS
@@ -19,27 +20,46 @@ def xarray_open_dataset(
     group: Optional[Any] = None,
     reference: Optional[bool] = False,
     decode_times: Optional[bool] = True,
+    consolidated: Optional[bool] = True,
 ) -> xarray.Dataset:
     """Open dataset."""
+
+    # Default arguments for xarray.open_dataset
+    file_handler = src_path
     xr_open_args: Dict[str, Any] = {
-        "engine": "zarr",
         "decode_coords": "all",
         "decode_times": decode_times,
-        "consolidated": True,
     }
-    if group:
-        xr_open_args["group"] = group
 
+    # NetCDF arguments
+    if src_path.endswith(".nc"):
+        if src_path.startswith("s3://"):
+            fs = s3fs.S3FileSystem()
+            file_handler = fs.open(src_path)
+        elif src_path.startswith("http"):
+            fs = fsspec.filesystem("http")
+            file_handler = fs.open(src_path)
+        xr_open_args["engine"] = "h5netcdf"
+    else:
+        # Zarr arguments
+        xr_open_args["engine"] = "zarr"
+        xr_open_args["consolidated"] = consolidated
+
+    # Arguments for kerchunk reference
     if reference:
         fs = fsspec.filesystem(
             "reference",
             fo=src_path,
             remote_options={"anon": True},
         )
-        src_path = fs.get_mapper("")
+        file_handler = fs.get_mapper("")
         xr_open_args["backend_kwargs"] = {"consolidated": False}
 
-    return xarray.open_dataset(src_path, **xr_open_args)
+    # Argument if we're opening a datatree
+    if group:
+        xr_open_args["group"] = group
+    ds = xarray.open_dataset(file_handler, **xr_open_args)
+    return ds
 
 
 def get_variable(
@@ -49,12 +69,15 @@ def get_variable(
     drop_dim: Optional[str] = None,
 ) -> xarray.DataArray:
     """Get Xarray variable as DataArray."""
-    ds = ds.rename({"lat": "y", "lon": "x"})
+    da = ds[variable]
+    latitude_var_name = da.metpy.latitude.name
+    longitude_var_name = da.metpy.longitude.name
+    da = da.rename({latitude_var_name: "y", longitude_var_name: "x"})
+
+    # TODO: add test
     if drop_dim:
         dim_to_drop, dim_val = drop_dim.split("=")
-        ds = ds.sel({dim_to_drop: dim_val}).drop(dim_to_drop)
-
-    da = ds[variable]
+        da = da.sel({dim_to_drop: dim_val}).drop(dim_to_drop)
 
     if (da.x > 180).any():
         # Adjust the longitude coordinates to the -180 to 180 range
@@ -96,6 +119,7 @@ class ZarrReader(XarrayReader):
     reference: bool = attr.ib(default=False)
     decode_times: bool = attr.ib(default=False)
     group: Optional[Any] = attr.ib(default=None)
+    consolidated: Optional[bool] = attr.ib(default=True)
 
     # xarray.DataArray options
     time_slice: Optional[str] = attr.ib(default=None)
@@ -123,6 +147,7 @@ class ZarrReader(XarrayReader):
                 self.src_path,
                 group=self.group,
                 reference=self.reference,
+                consolidated=self.consolidated,
             ),
         )
         self.input = get_variable(
@@ -147,11 +172,13 @@ class ZarrReader(XarrayReader):
         src_path: str,
         group: Optional[Any] = None,
         reference: Optional[bool] = False,
+        consolidated: Optional[bool] = True,
     ) -> List[str]:
         """List available variable in a dataset."""
         with xarray_open_dataset(
             src_path,
             group=group,
             reference=reference,
+            consolidated=consolidated,
         ) as ds:
             return list(ds.data_vars)  # type: ignore
