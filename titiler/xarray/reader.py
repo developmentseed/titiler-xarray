@@ -69,9 +69,12 @@ def get_variable(
     drop_dim: Optional[str] = None,
 ) -> xarray.DataArray:
     """Get Xarray variable as DataArray."""
-    da = ds[variable]
-    latitude_var_name = da.metpy.latitude.name
-    longitude_var_name = da.metpy.longitude.name
+    latitude_var_name = 'lat'
+    longitude_var_name = 'lon'
+    if ds.dims.get("latitude"):
+        latitude_var_name = "latitude"
+    if ds.dims.get("longitude"):
+        longitude_var_name = "longitude"
     da = da.rename({latitude_var_name: "y", longitude_var_name: "x"})
 
     # TODO: add test

@@ -25,7 +25,6 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-    "metpy",
     "h5netcdf",
     "xarray",
     "rioxarray",
