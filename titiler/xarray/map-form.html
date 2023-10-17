@@ -124,7 +124,11 @@
                 <br />
 
                 <input type="checkbox" id="reference" name="reference">
-                <label for="reference">Is this a URL a reference file (i.e. <a href="https://fsspec.github.io/kerchunk">kerchunk</a>)?:</label>
+                <label for="reference">Is this URL for a reference file (i.e. <a href="https://fsspec.github.io/kerchunk">kerchunk</a>)?:</label>
+                <br />
+
+                <input type="checkbox" id="consolidated" name="consolidated" checked>
+                <label for="consolidated">Does this Zarr store have consolidated metadata? (default should be to have consolidated metadata, learn more in the: <a href="https://zarr.readthedocs.io/en/stable/tutorial.html#consolidating-metadata">Zarr docs</a>)?:</label>
                 <br />
 
                 <!-- Variable input -->
@@ -201,9 +205,10 @@
                     loadingIcon.style.display = 'inline-block';
                     var urlValue = document.getElementById("url-input").value;
                     var reference = document.getElementById("reference").checked;
+                    var consolidated = document.getElementById("consolidated").checked;
 
                     // Fetch data from a URL
-                    fetch(`/variables?url=${encodeURIComponent(urlValue)}&reference=${reference}`) // Replace with the actual URL
+                    fetch(`/variables?url=${encodeURIComponent(urlValue)}&reference=${reference}&consolidated=${consolidated}`) // Replace with the actual URL
                         .then(response => response.json()) // Assuming server responds with JSON
                         .then(data => {
                             loadingIcon.style.display = 'none';
@@ -252,9 +257,10 @@
                     loadingIcon.style.display = 'inline-block';
                     var urlValue = document.getElementById("url-input").value;
                     var reference = document.getElementById("reference").checked;
+                    var consolidated = document.getElementById("consolidated").checked;
                     var variableInput = getVariableInput();
                     // Fetch data from a URL
-                    fetch(`/histogram?url=${encodeURIComponent(urlValue)}&variable=${encodeURIComponent(variableInput)}&reference=${reference}`) // Replace this with the actual URL
+                    fetch(`/histogram?url=${encodeURIComponent(urlValue)}&variable=${encodeURIComponent(variableInput)}&reference=${reference}&consolidated=${consolidated}`) // Replace this with the actual URL
                         .then(response => response.json()) // Assuming server responds with JSON
                         .then(data => {
                             loadingIcon.style.display = 'none';
@@ -311,9 +317,10 @@
                     var variableValue = getVariableInput();
                     var rescaleValue = document.getElementById("rescale-input").value;
                     var colormapValue = document.getElementById("colormap-dropdown").value;
+                    var consolidated = document.getElementById("consolidated").checked;
                     if (urlValue) {
                         // Redirect to the map URL with the input value as a parameter
-                        var href = `map?url=${encodeURIComponent(urlValue)}&variable=${encodeURIComponent(variableValue)}`;
+                        var href = `map?url=${encodeURIComponent(urlValue)}&variable=${encodeURIComponent(variableValue)}&consolidated=${consolidated}`;
                         if (reference) {
                             href += `&reference=${reference}`;
                         }

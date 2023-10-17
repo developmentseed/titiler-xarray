@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 import attr
 import fsspec
 import numpy
+import metpy.units as units
 import s3fs
 import xarray
 from morecantile import TileMatrixSet
@@ -69,12 +70,15 @@ def get_variable(
     drop_dim: Optional[str] = None,
 ) -> xarray.DataArray:
     """Get Xarray variable as DataArray."""
-    ds = ds.rename({"lat": "y", "lon": "x"})
+    da = ds[variable]
+    latitude_var_name = da.metpy.latitude.name
+    longitude_var_name = da.metpy.longitude.name
+    da = da.rename({latitude_var_name: "y", longitude_var_name: "x"})
+
+    # TODO: add test
     if drop_dim:
         dim_to_drop, dim_val = drop_dim.split("=")
-        ds = ds.sel({dim_to_drop: dim_val}).drop(dim_to_drop)
-
-    da = ds[variable]
+        da = da.sel({dim_to_drop: dim_val}).drop(dim_to_drop)
 
     if (da.x > 180).any():
         # Adjust the longitude coordinates to the -180 to 180 range
