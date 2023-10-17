@@ -7,6 +7,7 @@ from aws_cdk import App, CfnOutput, Duration, Stack, Tags
 from aws_cdk import aws_apigatewayv2_alpha as apigw
 from aws_cdk import aws_cloudwatch as cloudwatch
 from aws_cdk import aws_cloudwatch_actions as cloudwatch_actions
+from aws_cdk import aws_efs as efs
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda
 from aws_cdk import aws_logs as logs
@@ -54,6 +55,26 @@ class LambdaStack(Stack):
         permissions = permissions or []
         environment = environment or {}
 
+        # Create and attach a file system
+        file_system = efs.FileSystem(self, 'EfsFileSystem',
+            lifecycle_policy=efs.LifecyclePolicy.AFTER_7_DAYS,  # Or choose another policy
+            performance_mode=efs.PerformanceMode.GENERAL_PURPOSE,
+        )
+
+        access_point = file_system.add_access_point(
+            'AccessPoint',
+            path='/export/lambda',
+            create_acl={
+                'owner_uid': '1001',
+                'owner_gid': '1001',
+                'permissions': '750'
+            },
+            posix_user={
+                'uid': '1001',
+                'gid': '1001',
+            }
+        )
+
         lambda_function = aws_lambda.Function(
             self,
             f"{id}-lambda",
@@ -69,7 +90,11 @@ class LambdaStack(Stack):
             timeout=Duration.seconds(timeout),
             environment={**DEFAULT_ENV, **environment},
             log_retention=logs.RetentionDays.ONE_WEEK,
+            filesystem=aws_lambda.FileSystem.from_efs_access_point(access_point, '/mnt/efs')  # Mounting it to /mnt/efs in Lambda
         )
+
+        file_system.connections.allow_default_port_from(lambda_function)
+        file_system.grant(lambda_function, 'elasticfilesystem:ClientMount', 'elasticfilesystem:ClientWrite')
 
         for perm in permissions:
             lambda_function.add_to_role_policy(perm)
