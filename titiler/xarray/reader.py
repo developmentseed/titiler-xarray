@@ -69,8 +69,9 @@ def get_variable(
     drop_dim: Optional[str] = None,
 ) -> xarray.DataArray:
     """Get Xarray variable as DataArray."""
-    latitude_var_name = 'lat'
-    longitude_var_name = 'lon'
+    da = ds[variable]
+    latitude_var_name = "lat"
+    longitude_var_name = "lon"
     if ds.dims.get("latitude"):
         latitude_var_name = "latitude"
     if ds.dims.get("longitude"):
