@@ -53,6 +53,7 @@ def xarray_open_dataset(
             fs = fsspec.filesystem("http")
             file_handler = fs.open(src_path)
         xr_open_args["engine"] = "h5netcdf"
+        xr_open_args["lock"] = False
     else:
         # Zarr arguments
         xr_open_args["engine"] = "zarr"
