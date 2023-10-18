@@ -158,14 +158,14 @@ class ZarrReader(XarrayReader):
 
     def __attrs_post_init__(self):
         """Set bounds and CRS."""
-        self.ds = self._ctx_stack.enter_context(
-            xarray_open_dataset(
+        with xarray_open_dataset(
                 self.src_path,
                 group=self.group,
                 reference=self.reference,
                 consolidated=self.consolidated,
-            ),
-        )
+        ) as ds:
+            self.ds = self._ctx_stack.enter_context(ds)
+
         self.input = get_variable(
             self.ds,
             self.variable,
