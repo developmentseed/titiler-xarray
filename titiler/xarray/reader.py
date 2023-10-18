@@ -162,10 +162,10 @@ class ZarrReader(XarrayReader):
         """Set bounds and CRS."""
         self.ds = self._ctx_stack.enter_context(
             xarray_open_dataset(
-            self.src_path,
-            group=self.group,
-            reference=self.reference,
-            consolidated=self.consolidated,
+                self.src_path,
+                group=self.group,
+                reference=self.reference,
+                consolidated=self.consolidated,
             )
         )
 
