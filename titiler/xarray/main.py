@@ -19,6 +19,7 @@ from titiler.xarray import __version__ as titiler_version
 from titiler.xarray.factory import ZarrTilerFactory
 from titiler.xarray.middleware import ServerTimingMiddleware
 from titiler.xarray.settings import ApiSettings
+import titiler.xarray.reader as reader
 
 logging.getLogger("botocore.credentials").disabled = True
 logging.getLogger("botocore.utils").disabled = True
@@ -85,7 +86,7 @@ if api_settings.debug:
     app.add_middleware(
         ServerTimingMiddleware,
         calls_to_track={
-            "1-xarray-open_dataset": (xarray.open_dataset,),
+            "1-xarray-open_dataset": (reader.xarray_open_dataset,),
             "2-rioxarray-reproject": (rioxarray.raster_array.RasterArray.reproject,),
         },
     )
