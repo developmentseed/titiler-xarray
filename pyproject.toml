@@ -32,7 +32,6 @@ dependencies = [
     "zarr",
     "fsspec",
     "s3fs",
-    "requests",
     "aiohttp",
     "pydantic==2.0.2",
     "titiler.core>=0.14.1,<0.15",
