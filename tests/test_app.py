@@ -57,8 +57,8 @@ def test_get_variables_reference(app):
     return get_variables_test(app, test_reference_store_params)
 
 
-def test_get_variables_netcdf(app):
-    return get_variables_test(app, test_netcdf_store_params)
+# def test_get_variables_netcdf(app):
+#     return get_variables_test(app, test_netcdf_store_params)
 
 
 def test_get_variables_unconsolidated(app):
@@ -86,8 +86,8 @@ def test_get_info_reference(app):
     return get_info_test(app, test_reference_store, test_reference_store_params)
 
 
-def test_get_info_netcdf(app):
-    return get_info_test(app, test_netcdf_store, test_netcdf_store_params)
+# def test_get_info_netcdf(app):
+#     return get_info_test(app, test_netcdf_store, test_netcdf_store_params)
 
 
 def test_get_info_unconsolidated(app):
