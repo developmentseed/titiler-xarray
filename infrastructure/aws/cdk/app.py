@@ -69,7 +69,7 @@ class LambdaStack(Stack):
                 ),
                 ec2.SubnetConfiguration(
                     name="Private",
-                    subnet_type=ec2.SubnetType.PRIVATE,
+                    subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT,
                     cidr_mask=24
                 ),
             ],
@@ -99,7 +99,7 @@ class LambdaStack(Stack):
             self,
             f"{id}-lambda",
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE),
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT),
             runtime=runtime,
             code=aws_lambda.Code.from_docker_build(
                 path=os.path.abspath(context_dir),
