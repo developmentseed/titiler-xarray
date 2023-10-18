@@ -1,7 +1,17 @@
 import json
+import pytest
 import os
 
 from helpers import find_string_in_stream
+import titiler.xarray.reader as reader
+
+@pytest.fixture(autouse=True)
+def setup_and_teardown():
+    # Setup: Code executed before the test
+    # (None for now)
+    yield
+    # Teardown: Executed after the test
+    reader.cache.clear()
 
 DATA_DIR = "tests/fixtures"
 test_zarr_store = os.path.join(DATA_DIR, "test_zarr_store.zarr")
