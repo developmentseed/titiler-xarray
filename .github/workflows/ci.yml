@@ -6,6 +6,7 @@ on:
     branches:
     - main
     - dev
+    - feat/diskcache
     tags:
     - 'v*'
     paths:
@@ -54,7 +55,8 @@ jobs:
   deploy:
     needs: [tests]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || startsWith(github.ref, 'refs/tags/v')
+    #if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || startsWith(github.ref, 'refs/tags/v')
+    if: github.ref == 'refs/heads/feat/diskcache'
   
     defaults:
       run:
@@ -87,6 +89,16 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements-cdk.txt
+
+      # Build and deploy to the feature environment whenever there is a push to main or dev
+      - name: Build & Deploy Feature
+        if: github.ref == 'refs/heads/feat/diskcache'
+        run: npm run cdk -- deploy titiler-xarray-feature
+        env:
+          TITILER_XARRAY_PYTHONWARNINGS: ignore
+          TITILER_XARRAY_DEBUG: True
+          STACK_ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }}
+          STACK_STAGE: feature
 
       # Build and deploy to the development environment whenever there is a push to main or dev
       - name: Build & Deploy Development

@@ -13,8 +13,11 @@ from rasterio.crs import CRS
 from rio_tiler.constants import WEB_MERCATOR_TMS, WGS84_CRS
 from rio_tiler.io.xarray import XarrayReader
 from rio_tiler.types import BBox
+import diskcache as dc
 
+cache = dc.Cache(directory='/mnt/efs/diskcache')
 
+@cache.memoize(tag='xarray_open_dataset')
 def xarray_open_dataset(
     src_path: str,
     group: Optional[Any] = None,
