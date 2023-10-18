@@ -17,7 +17,7 @@ from rio_tiler.types import BBox
 
 import diskcache as dc
 
-dir_to_check = "/mnt/efs/diskcache"
+dir_to_check = "/mnt/efs"
 fallback_dir = "diskcache"
 
 if os.path.exists(dir_to_check) and os.path.isdir(dir_to_check):
