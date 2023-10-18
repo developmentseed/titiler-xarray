@@ -102,3 +102,9 @@ if api_settings.debug:
 def ping():
     """Health check."""
     return {"ping": "pong!"}
+
+@app.on_event("shutdown")
+def shutdown_event():
+    # Your cleanup code here
+    print("Shutting down the application...")
+    reader.cache.clear()

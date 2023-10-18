@@ -71,8 +71,7 @@ def xarray_open_dataset(
     # Argument if we're opening a datatree
     if group:
         xr_open_args["group"] = group
-    with xarray.open_dataset(file_handler, **xr_open_args) as dataset:
-        return dataset
+    return xarray.open_dataset(file_handler, **xr_open_args)
 
 
 def get_variable(

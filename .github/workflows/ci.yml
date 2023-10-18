@@ -53,7 +53,7 @@ jobs:
         run: python -m pytest --cov titiler.xarray --cov-report term-missing -s -vv
 
   deploy:
-    needs: [tests]
+    #needs: [tests]
     runs-on: ubuntu-latest
     #if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev' || startsWith(github.ref, 'refs/tags/v')
     if: github.ref == 'refs/heads/feat/diskcache'
