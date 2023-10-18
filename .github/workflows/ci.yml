@@ -93,7 +93,7 @@ jobs:
       # Build and deploy to the feature environment whenever there is a push to main or dev
       - name: Build & Deploy Feature
         if: github.ref == 'refs/heads/feat/diskcache'
-        run: npm run cdk -- deploy titiler-xarray-feature
+        run: npm run cdk -- deploy titiler-xarray-feature --require-approval never
         env:
           TITILER_XARRAY_PYTHONWARNINGS: ignore
           TITILER_XARRAY_DEBUG: True
