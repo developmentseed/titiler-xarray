@@ -27,6 +27,7 @@ else:
 
 cache = dc.Cache(directory=directory)
 
+
 @cache.memoize(tag="xarray_open_dataset")
 def xarray_open_dataset(
     src_path: str,
@@ -72,8 +73,7 @@ def xarray_open_dataset(
     # Argument if we're opening a datatree
     if group:
         xr_open_args["group"] = group
-    with xarray.open_dataset(file_handler, **xr_open_args) as ds:
-        return ds
+    return xarray.open_dataset(file_handler, **xr_open_args)
 
 
 def get_variable(
@@ -160,13 +160,14 @@ class ZarrReader(XarrayReader):
 
     def __attrs_post_init__(self):
         """Set bounds and CRS."""
-        with xarray_open_dataset(
-                self.src_path,
-                group=self.group,
-                reference=self.reference,
-                consolidated=self.consolidated,
-        ) as ds:
-            self.ds = self._ctx_stack.enter_context(ds)
+        self.ds = self._ctx_stack.enter_context(
+            xarray_open_dataset(
+            self.src_path,
+            group=self.group,
+            reference=self.reference,
+            consolidated=self.consolidated,
+            )
+        )
 
         self.input = get_variable(
             self.ds,

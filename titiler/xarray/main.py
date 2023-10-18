@@ -3,11 +3,11 @@
 import logging
 
 import rioxarray
-import xarray
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette_cramjam.middleware import CompressionMiddleware
 
+import titiler.xarray.reader as reader
 from titiler.core.errors import DEFAULT_STATUS_CODES, add_exception_handlers
 from titiler.core.factory import AlgorithmFactory, TMSFactory
 from titiler.core.middleware import (
@@ -19,7 +19,6 @@ from titiler.xarray import __version__ as titiler_version
 from titiler.xarray.factory import ZarrTilerFactory
 from titiler.xarray.middleware import ServerTimingMiddleware
 from titiler.xarray.settings import ApiSettings
-import titiler.xarray.reader as reader
 
 logging.getLogger("botocore.credentials").disabled = True
 logging.getLogger("botocore.utils").disabled = True
@@ -103,8 +102,12 @@ def ping():
     """Health check."""
     return {"ping": "pong!"}
 
+
 @app.on_event("shutdown")
 def shutdown_event():
+    """
+    Code to run on shutdown.
+    """
     # Your cleanup code here
     print("Shutting down the application...")
     reader.cache.clear()

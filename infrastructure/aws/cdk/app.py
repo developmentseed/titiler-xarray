@@ -56,25 +56,24 @@ class LambdaStack(Stack):
         permissions = permissions or []
         environment = environment or {}
 
-        vpc = ec2.Vpc(self, "MyVPC",
+        vpc = ec2.Vpc(
+            self,
+            "MyVPC",
             max_azs=2,  # Default is all AZs in the region
             nat_gateways=1,
             cidr="10.0.0.0/16",
             # Define custom CIDR range for each subnet type
             subnet_configuration=[
                 ec2.SubnetConfiguration(
-                    name="Public",
-                    subnet_type=ec2.SubnetType.PUBLIC,
-                    cidr_mask=24
+                    name="Public", subnet_type=ec2.SubnetType.PUBLIC, cidr_mask=24
                 ),
                 ec2.SubnetConfiguration(
                     name="Private",
                     subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT,
-                    cidr_mask=24
+                    cidr_mask=24,
                 ),
             ],
         )
-
 
         # Create and attach a file system
         file_system = efs.FileSystem(
@@ -99,7 +98,9 @@ class LambdaStack(Stack):
             self,
             f"{id}-lambda",
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT),
+            vpc_subnets=ec2.SubnetSelection(
+                subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT
+            ),
             runtime=runtime,
             code=aws_lambda.Code.from_docker_build(
                 path=os.path.abspath(context_dir),
