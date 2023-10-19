@@ -28,7 +28,7 @@ dependencies = [
     "cftime",
     "diskcache",
     "h5netcdf",
-    "xarray",
+    "xarray==2023.10.0",
     "rioxarray",
     "zarr",
     "fsspec",
