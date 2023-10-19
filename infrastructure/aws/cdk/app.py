@@ -56,51 +56,9 @@ class LambdaStack(Stack):
         permissions = permissions or []
         environment = environment or {}
 
-        vpc = ec2.Vpc(
-            self,
-            "MyVPC",
-            max_azs=2,  # Default is all AZs in the region
-            nat_gateways=1,
-            cidr="10.0.0.0/16",
-            # Define custom CIDR range for each subnet type
-            subnet_configuration=[
-                ec2.SubnetConfiguration(
-                    name="Public", subnet_type=ec2.SubnetType.PUBLIC, cidr_mask=24
-                ),
-                ec2.SubnetConfiguration(
-                    name="Private",
-                    subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT,
-                    cidr_mask=24,
-                ),
-            ],
-        )
-
-        # Create and attach a file system
-        file_system = efs.FileSystem(
-            self,
-            "EfsFileSystem",
-            vpc=vpc,
-            lifecycle_policy=efs.LifecyclePolicy.AFTER_7_DAYS,  # Or choose another policy
-            performance_mode=efs.PerformanceMode.GENERAL_PURPOSE,
-        )
-
-        access_point = file_system.add_access_point(
-            "AccessPoint",
-            path="/export/lambda",
-            create_acl={"owner_uid": "1001", "owner_gid": "1001", "permissions": "750"},
-            posix_user={
-                "uid": "1001",
-                "gid": "1001",
-            },
-        )
-
         lambda_function = aws_lambda.Function(
             self,
             f"{id}-lambda",
-            vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(
-                subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT
-            ),
             runtime=runtime,
             code=aws_lambda.Code.from_docker_build(
                 path=os.path.abspath(context_dir),
@@ -112,17 +70,7 @@ class LambdaStack(Stack):
             reserved_concurrent_executions=concurrent,
             timeout=Duration.seconds(timeout),
             environment={**DEFAULT_ENV, **environment},
-            log_retention=logs.RetentionDays.ONE_WEEK,
-            filesystem=aws_lambda.FileSystem.from_efs_access_point(
-                access_point, "/mnt/efs"
-            ),  # Mounting it to /mnt/efs in Lambda
-        )
-
-        file_system.connections.allow_default_port_from(lambda_function)
-        file_system.grant(
-            lambda_function,
-            "elasticfilesystem:ClientMount",
-            "elasticfilesystem:ClientWrite",
+            log_retention=logs.RetentionDays.ONE_WEEK
         )
 
         for perm in permissions:

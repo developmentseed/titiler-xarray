@@ -16,16 +16,7 @@ from rio_tiler.constants import WEB_MERCATOR_TMS, WGS84_CRS
 from rio_tiler.io.xarray import XarrayReader
 from rio_tiler.types import BBox
 
-dir_to_check = "/mnt/efs"
-fallback_dir = "diskcache"
-
-if os.path.exists(dir_to_check) and os.path.isdir(dir_to_check):
-    directory = dir_to_check
-else:
-    directory = fallback_dir
-
-cache = dc.Cache(directory=directory)
-
+cache = dc.Cache(directory="/tmp/diskcache")
 
 @cache.memoize(tag="xarray_open_dataset")
 def xarray_open_dataset(
