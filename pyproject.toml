@@ -34,6 +34,7 @@ dependencies = [
     "fsspec",
     "s3fs",
     "aiohttp",
+    "requests",
     "pydantic==2.0.2",
     "titiler.core>=0.14.1,<0.15",
     "pydantic-settings~=2.0",

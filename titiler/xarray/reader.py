@@ -16,7 +16,7 @@ from rio_tiler.constants import WEB_MERCATOR_TMS, WGS84_CRS
 from rio_tiler.io.xarray import XarrayReader
 from rio_tiler.types import BBox
 
-cache = dc.Cache(directory="/tmp/diskcache")
+cache = dc.Cache(directory="/tmp/diskcache", eviction_policy='least-frequently-used')
 
 @cache.memoize(tag="xarray_open_dataset")
 def xarray_open_dataset(
