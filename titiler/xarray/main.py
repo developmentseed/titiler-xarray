@@ -90,11 +90,15 @@ def ping():
     return {"ping": "pong!"}
 
 
-@app.on_event("shutdown")
-def shutdown_event():
-    """
-    Code to run on shutdown.
-    """
-    # Your cleanup code here
-    print("Shutting down the application...")
+@app.get(
+    "/clear_cache",
+    description="Clear Cache",
+    summary="Clear Cache.",
+    operation_id="clear cache",
+    tags=["Clear Cache"],
+)
+def clear_cache():
+    print("Clearing the cache...")
     reader.cache.clear()
+    return {"message": "cache cleared"}
+
