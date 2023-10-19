@@ -5,6 +5,7 @@ import os
 from typing import Any, Dict, List, Optional
 
 import attr
+import diskcache as dc
 import fsspec
 import numpy
 import s3fs
@@ -14,8 +15,6 @@ from rasterio.crs import CRS
 from rio_tiler.constants import WEB_MERCATOR_TMS, WGS84_CRS
 from rio_tiler.io.xarray import XarrayReader
 from rio_tiler.types import BBox
-
-import diskcache as dc
 
 dir_to_check = "/mnt/efs"
 fallback_dir = "diskcache"
