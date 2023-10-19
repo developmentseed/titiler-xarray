@@ -25,6 +25,7 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
+    "cftime",
     "diskcache",
     "h5netcdf",
     "pandas==1.5.3",
