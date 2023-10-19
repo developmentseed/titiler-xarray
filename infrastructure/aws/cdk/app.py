@@ -7,8 +7,6 @@ from aws_cdk import App, CfnOutput, Duration, Stack, Tags
 from aws_cdk import aws_apigatewayv2_alpha as apigw
 from aws_cdk import aws_cloudwatch as cloudwatch
 from aws_cdk import aws_cloudwatch_actions as cloudwatch_actions
-from aws_cdk import aws_ec2 as ec2
-from aws_cdk import aws_efs as efs
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda
 from aws_cdk import aws_logs as logs
@@ -70,7 +68,7 @@ class LambdaStack(Stack):
             reserved_concurrent_executions=concurrent,
             timeout=Duration.seconds(timeout),
             environment={**DEFAULT_ENV, **environment},
-            log_retention=logs.RetentionDays.ONE_WEEK
+            log_retention=logs.RetentionDays.ONE_WEEK,
         )
 
         for perm in permissions:

@@ -1,11 +1,9 @@
 """ZarrReader."""
 
 import contextlib
-import os
 from typing import Any, Dict, List, Optional
 
 import attr
-import diskcache as dc
 import fsspec
 import numpy
 import s3fs
@@ -16,7 +14,10 @@ from rio_tiler.constants import WEB_MERCATOR_TMS, WGS84_CRS
 from rio_tiler.io.xarray import XarrayReader
 from rio_tiler.types import BBox
 
-cache = dc.Cache(directory="/tmp/diskcache", eviction_policy='least-frequently-used')
+import diskcache as dc
+
+cache = dc.Cache(directory="/tmp/diskcache", eviction_policy="least-frequently-used")
+
 
 @cache.memoize(tag="xarray_open_dataset")
 def xarray_open_dataset(

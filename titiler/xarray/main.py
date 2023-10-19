@@ -98,7 +98,9 @@ def ping():
     tags=["Clear Cache"],
 )
 def clear_cache():
+    """
+    Clear the cache.
+    """
     print("Clearing the cache...")
     reader.cache.clear()
     return {"message": "cache cleared"}
-
