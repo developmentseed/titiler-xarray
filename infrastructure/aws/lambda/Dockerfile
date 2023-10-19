@@ -25,6 +25,8 @@ RUN cd /asset && find . -type f -a -name '*.py' -print0 | xargs -0 rm -f
 RUN find /asset -type d -a -name 'tests' -print0 | xargs -0 rm -rf
 RUN rm -rdf /asset/numpy/doc/ /asset/bin /asset/geos_license /asset/Misc
 RUN rm -rdf /asset/boto3* /asset/botocore* /root/.cache*
+RUN rm -rdf /usr/share/doc /usr/share/fonts /user/share/misc /var/runtime/botocore/data/sagemaker /var/runtime/botocore/data/rds
+
 RUN find /asset -type d -name 'doc' -exec rm -r {} +
 RUN find /asset -type d -name 'docs' -exec rm -r {} +
 RUN find /asset -type d -name 'examples' -exec rm -r {} +
