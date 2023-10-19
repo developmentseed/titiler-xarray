@@ -27,6 +27,7 @@ dynamic = ["version"]
 dependencies = [
     "diskcache",
     "h5netcdf",
+    "pandas==1.5.3",
     "xarray",
     "rioxarray",
     "zarr",
