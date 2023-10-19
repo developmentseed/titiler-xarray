@@ -5,7 +5,6 @@ import logging
 import rioxarray
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
-from starlette_cramjam.middleware import CompressionMiddleware
 
 import titiler.xarray.reader as reader
 from titiler.core.errors import DEFAULT_STATUS_CODES, add_exception_handlers
@@ -60,18 +59,6 @@ if api_settings.cors_origins:
         allow_methods=api_settings.cors_allow_methods,
         allow_headers=["*"],
     )
-
-app.add_middleware(
-    CompressionMiddleware,
-    minimum_size=0,
-    exclude_mediatype={
-        "image/jpeg",
-        "image/jpg",
-        "image/png",
-        "image/jp2",
-        "image/webp",
-    },
-)
 
 app.add_middleware(
     CacheControlMiddleware,
