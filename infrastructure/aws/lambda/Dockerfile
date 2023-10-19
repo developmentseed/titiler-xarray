@@ -24,22 +24,8 @@ RUN cd /asset && find . -type d -a -name '__pycache__' -print0 | xargs -0 rm -rf
 RUN cd /asset && find . -type f -a -name '*.py' -print0 | xargs -0 rm -f
 RUN find /asset -type d -a -name 'tests' -print0 | xargs -0 rm -rf
 RUN rm -rdf /asset/numpy/doc/ /asset/bin /asset/geos_license /asset/Misc
-RUN rm -rdf /asset/boto3* /asset/botocore* /root/.cache*
-RUN rm -rdf /usr/share/doc /usr/share/fonts /user/share/misc /var/runtime/botocore/data/sagemaker /var/runtime/botocore/data/rds
-
-RUN find /asset -type d -name 'doc' -exec rm -r {} +
-RUN find /asset -type d -name 'docs' -exec rm -r {} +
-RUN find /asset -type d -name 'examples' -exec rm -r {} +
-RUN find /asset -type d -name '__pycache__' -exec rm -r {} +
-RUN find /asset -type d -name 'tests' -exec rm -r {} +
-RUN find /asset -type d -name 'test' -exec rm -r {} +
-
-RUN find /var -type d -name 'doc' -exec rm -r {} +
-RUN find /var -type d -name 'docs' -exec rm -r {} +
-RUN find /var -type d -name 'examples' -exec rm -r {} +
-RUN find /var -type d -name '__pycache__' -exec rm -r {} +
-RUN find /var -type d -name 'tests' -exec rm -r {} +
-RUN find /var -type d -name 'test' -exec rm -r {} +
+RUN rm -rdf /asset/boto3*
+RUN rm -rdf /asset/botocore*
 
 COPY infrastructure/aws/lambda/handler.py /asset/handler.py
 
