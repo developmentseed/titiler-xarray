@@ -25,12 +25,12 @@ def parse_prtocol(src_path: str, reference: Optional[bool] = False):
     Parse protocol from path.
     """
     match = re.match(r"^(s3|https|http)", src_path)
+    protocol = "file"
     if match:
         protocol = match.group(0)
-    elif reference:
+    # override protocol if reference
+    if reference:
         protocol = "reference"
-    else:
-        protocol = "file"
     return protocol
 
 
