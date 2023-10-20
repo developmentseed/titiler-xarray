@@ -61,18 +61,6 @@ if api_settings.cors_origins:
     )
 
 app.add_middleware(
-    CompressionMiddleware,
-    minimum_size=0,
-    exclude_mediatype={
-        "image/jpeg",
-        "image/jpg",
-        "image/png",
-        "image/jp2",
-        "image/webp",
-    },
-)
-
-app.add_middleware(
     CacheControlMiddleware,
     cachecontrol=api_settings.cachecontrol,
     exclude_path={r"/healthz"},
