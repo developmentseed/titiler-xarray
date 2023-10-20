@@ -65,7 +65,7 @@ class LambdaStack(Stack):
                 platform="linux/amd64",
             ),
             handler="handler.handler",
-            memory_size=memory,
+            memory_size=aws_cdk.Size.gibibytes(10),
             reserved_concurrent_executions=concurrent,
             timeout=Duration.seconds(timeout),
             environment={**DEFAULT_ENV, **environment},
