@@ -71,7 +71,7 @@ class LambdaStack(Stack):
             timeout=Duration.seconds(timeout),
             environment={**DEFAULT_ENV, **environment},
             log_retention=logs.RetentionDays.ONE_WEEK,
-            ephemeral_storage_size=aws_cdk.Size.gigabytes(10),
+            ephemeral_storage_size=aws_cdk.Size.gibibytes(10),
         )
 
         for perm in permissions:
