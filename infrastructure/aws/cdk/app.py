@@ -58,7 +58,7 @@ class LambdaStack(Stack):
 
         vpc = ec2.Vpc(
             self,
-            "MyVPC",
+            "titiler-xarray-vpc",
             max_azs=2,  # Default is all AZs in the region
             nat_gateways=1,
             cidr="10.0.0.0/16",
