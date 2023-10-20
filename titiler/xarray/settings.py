@@ -11,6 +11,8 @@ class ApiSettings(BaseSettings):
     cors_origins: str = "*"
     cors_allow_methods: str = "GET"
     cachecontrol: str = "public, max-age=3600"
+    enable_diskcache: bool = True
+    diskcache_directory: str = "/mnt/efs"
     root_path: str = ""
     debug: bool = False
 

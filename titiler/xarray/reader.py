@@ -1,6 +1,7 @@
 """ZarrReader."""
 
 import contextlib
+import re
 from typing import Any, Dict, List, Optional
 
 import attr
@@ -14,6 +15,24 @@ from rio_tiler.constants import WEB_MERCATOR_TMS, WGS84_CRS
 from rio_tiler.io.xarray import XarrayReader
 from rio_tiler.types import BBox
 
+from titiler.xarray.settings import ApiSettings
+
+api_settings = ApiSettings()
+
+
+def parse_prtocol(src_path: str, reference: Optional[bool] = False):
+    """
+    Parse protocol from path.
+    """
+    match = re.match(r"^(s3|https|http)", src_path)
+    if match:
+        protocol = match.group(0)
+    elif reference:
+        protocol = "reference"
+    else:
+        protocol = "file"
+    return protocol
+
 
 def xarray_open_dataset(
     src_path: str,
@@ -23,41 +42,54 @@ def xarray_open_dataset(
     consolidated: Optional[bool] = True,
 ) -> xarray.Dataset:
     """Open dataset."""
+    protocol = parse_prtocol(src_path, reference=reference)
 
-    # Default arguments for xarray.open_dataset
+    # cache arguments
+    filecache_fs = None
+    if api_settings.enable_diskcache:
+        cache_arguments = {
+            "target_protocol": protocol,
+            "cache_storage": api_settings.diskcache_directory,
+            "remote_options": {"anon": True},
+        }
+        if reference:
+            cache_arguments["target_options"] = {"fo": src_path}
+        filecache_fs = fsspec.filesystem("filecache", **cache_arguments)
+
+    # filesystem open file arguments
     file_handler = src_path
+    if protocol == "s3":
+        file_handler = s3fs.S3Map(root=src_path, s3=filecache_fs)
+    elif protocol in ["https", "http"]:
+        fs = fsspec.filesystem(protocol)
+        file_handler = fs.open(src_path, fs=filecache_fs)
+    elif reference:
+        if api_settings.enable_diskcache:
+            fs = filecache_fs
+        else:
+            reference_args = {"fo": src_path, "remote_options": {"anon": True}}
+            fs = fsspec.filesystem("reference", **reference_args)
+        file_handler = fs.get_mapper("")
+
+    # xarray open dataset arguments
     xr_open_args: Dict[str, Any] = {
         "decode_coords": "all",
         "decode_times": decode_times,
     }
-
     # NetCDF arguments
     if src_path.endswith(".nc"):
-        if src_path.startswith("s3://"):
-            fs = s3fs.S3FileSystem()
-            file_handler = fs.open(src_path)
-        elif src_path.startswith("http"):
-            fs = fsspec.filesystem("http")
-            file_handler = fs.open(src_path)
         xr_open_args["engine"] = "h5netcdf"
     else:
         # Zarr arguments
         xr_open_args["engine"] = "zarr"
         xr_open_args["consolidated"] = consolidated
 
-    # Arguments for kerchunk reference
     if reference:
-        fs = fsspec.filesystem(
-            "reference",
-            fo=src_path,
-            remote_options={"anon": True},
-        )
-        file_handler = fs.get_mapper("")
         xr_open_args["backend_kwargs"] = {"consolidated": False}
-
     # Argument if we're opening a datatree
     if group:
         xr_open_args["group"] = group
+
     ds = xarray.open_dataset(file_handler, **xr_open_args)
     return ds
 
