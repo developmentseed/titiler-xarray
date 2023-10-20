@@ -11,12 +11,18 @@ from fastapi.testclient import TestClient
 def app(monkeypatch):
     """App fixture."""
     monkeypatch.setenv("TITILER_XARRAY_DEBUG", "TRUE")
-    os.environ["TITILER_XARRAY_DISKCACHE_DIRECTORY"] = "fsspec_test_cache"
 
     from titiler.xarray.main import app
 
     with TestClient(app) as client:
         yield client
+
+
+def pytest_sessionstart(session):
+    """Setup before tests run."""
+    test_cache_dir = "fsspec_test_cache"
+    os.environ["TITILER_XARRAY_DISKCACHE_DIRECTORY"] = test_cache_dir
+    os.mkdir(test_cache_dir)
 
 
 def pytest_sessionfinish(session, exitstatus):
