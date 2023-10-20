@@ -3,6 +3,7 @@
 import os
 from typing import Any, Dict, List, Optional
 
+import aws_cdk
 from aws_cdk import App, CfnOutput, Duration, Stack, Tags
 from aws_cdk import aws_apigatewayv2_alpha as apigw
 from aws_cdk import aws_cloudwatch as cloudwatch
@@ -13,6 +14,7 @@ from aws_cdk import aws_logs as logs
 from aws_cdk import aws_sns as sns
 from aws_cdk import aws_sns_subscriptions as subscriptions
 from aws_cdk.aws_apigatewayv2_integrations_alpha import HttpLambdaIntegration
+
 from config import StackSettings
 from constructs import Construct
 
@@ -69,7 +71,7 @@ class LambdaStack(Stack):
             timeout=Duration.seconds(timeout),
             environment={**DEFAULT_ENV, **environment},
             log_retention=logs.RetentionDays.ONE_WEEK,
-            ephemeral_storage_size=10240,
+            ephemeral_storage_size=aws_cdk.Size.gigabytes(10),
         )
 
         for perm in permissions:
