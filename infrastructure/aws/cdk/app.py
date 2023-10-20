@@ -14,7 +14,6 @@ from aws_cdk import aws_logs as logs
 from aws_cdk import aws_sns as sns
 from aws_cdk import aws_sns_subscriptions as subscriptions
 from aws_cdk.aws_apigatewayv2_integrations_alpha import HttpLambdaIntegration
-
 from config import StackSettings
 from constructs import Construct
 
