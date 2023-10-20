@@ -16,7 +16,7 @@ from rio_tiler.types import BBox
 
 import diskcache as dc
 
-cache = dc.Cache(directory="/tmp/diskcache", eviction_policy="least-frequently-used")
+cache = dc.Cache(directory="/tmp/diskcache", eviction_policy="least-frequently-used", max_size=2**30 * 5) # 5 GB
 
 
 @cache.memoize(tag="xarray_open_dataset")

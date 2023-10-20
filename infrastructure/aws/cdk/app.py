@@ -69,6 +69,7 @@ class LambdaStack(Stack):
             timeout=Duration.seconds(timeout),
             environment={**DEFAULT_ENV, **environment},
             log_retention=logs.RetentionDays.ONE_WEEK,
+            ephemeral_storage_size=10240,
         )
 
         for perm in permissions:
