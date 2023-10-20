@@ -6,7 +6,6 @@ import rioxarray
 import xarray
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
-from starlette_cramjam.middleware import CompressionMiddleware
 
 from titiler.core.errors import DEFAULT_STATUS_CODES, add_exception_handlers
 from titiler.core.factory import AlgorithmFactory, TMSFactory
