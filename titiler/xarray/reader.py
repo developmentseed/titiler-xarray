@@ -34,15 +34,40 @@ def parse_prtocol(src_path: str, reference: Optional[bool] = False):
     return protocol
 
 
+def xarray_engine(src_path: str):
+    """
+    Parse xarray engine from path.
+    """
+    if src_path.endswith(".nc"):
+        return "h5netcdf"
+    else:
+        return "zarr"
+
+
 def xarray_open_dataset(
     src_path: str,
     group: Optional[Any] = None,
     reference: Optional[bool] = False,
     decode_times: Optional[bool] = True,
     consolidated: Optional[bool] = True,
+    anon: Optional[bool] = True,
 ) -> xarray.Dataset:
     """Open dataset."""
     protocol = parse_prtocol(src_path, reference=reference)
+    xr_engine = xarray_engine(src_path)
+
+    # xarray open dataset arguments
+    xr_open_args: Dict[str, Any] = {
+        "decode_coords": "all",
+        "decode_times": decode_times,
+        "engine": xr_engine,
+    }
+    if xr_engine != "h5netcdf":
+        xr_open_args["consolidated"] = consolidated
+    if reference:
+        xr_open_args["backend_kwargs"] = {"consolidated": False}
+    if group:
+        xr_open_args["group"] = group
 
     # cache arguments
     filecache_fs = None
@@ -50,7 +75,7 @@ def xarray_open_dataset(
         cache_arguments = {
             "target_protocol": protocol,
             "cache_storage": api_settings.diskcache_directory,
-            "remote_options": {"anon": True},
+            "remote_options": {"anon": anon},
         }
         if reference:
             cache_arguments["target_options"] = {"fo": src_path}
@@ -59,36 +84,23 @@ def xarray_open_dataset(
     # filesystem open file arguments
     file_handler = src_path
     if protocol == "s3":
-        file_handler = s3fs.S3Map(root=src_path, s3=filecache_fs)
+        if api_settings.enable_diskcache:
+            file_handler = s3fs.S3Map(root=src_path, s3=filecache_fs)
+        else:
+            file_handler = s3fs.S3Map(root=src_path)
     elif protocol in ["https", "http"]:
         fs = fsspec.filesystem(protocol)
-        file_handler = fs.open(src_path, fs=filecache_fs)
+        if api_settings.enable_diskcache and xr_engine != "h5netcdf":
+            file_handler = fs.open(src_path, fs=filecache_fs)
+        else:
+            file_handler = fs.open(src_path)
     elif reference:
         if api_settings.enable_diskcache:
             fs = filecache_fs
         else:
-            reference_args = {"fo": src_path, "remote_options": {"anon": True}}
+            reference_args = {"fo": src_path, "remote_options": {"anon": anon}}
             fs = fsspec.filesystem("reference", **reference_args)
         file_handler = fs.get_mapper("")
-
-    # xarray open dataset arguments
-    xr_open_args: Dict[str, Any] = {
-        "decode_coords": "all",
-        "decode_times": decode_times,
-    }
-    # NetCDF arguments
-    if src_path.endswith(".nc"):
-        xr_open_args["engine"] = "h5netcdf"
-    else:
-        # Zarr arguments
-        xr_open_args["engine"] = "zarr"
-        xr_open_args["consolidated"] = consolidated
-
-    if reference:
-        xr_open_args["backend_kwargs"] = {"consolidated": False}
-    # Argument if we're opening a datatree
-    if group:
-        xr_open_args["group"] = group
 
     ds = xarray.open_dataset(file_handler, **xr_open_args)
     return ds
@@ -156,6 +168,7 @@ class ZarrReader(XarrayReader):
     decode_times: bool = attr.ib(default=False)
     group: Optional[Any] = attr.ib(default=None)
     consolidated: Optional[bool] = attr.ib(default=True)
+    anon: Optional[bool] = attr.ib(default=True)
 
     # xarray.DataArray options
     time_slice: Optional[str] = attr.ib(default=None)
@@ -184,6 +197,7 @@ class ZarrReader(XarrayReader):
                 group=self.group,
                 reference=self.reference,
                 consolidated=self.consolidated,
+                anon=self.anon,
             ),
         )
         self.input = get_variable(

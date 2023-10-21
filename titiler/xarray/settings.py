@@ -12,11 +12,11 @@ class ApiSettings(BaseSettings):
     cors_allow_methods: str = "GET"
     cachecontrol: str = "public, max-age=3600"
     enable_diskcache: bool = True
-    diskcache_directory: str = "/mnt/efs"
     root_path: str = ""
     debug: bool = False
 
     model_config = SettingsConfigDict(env_prefix="TITILER_XARRAY_", env_file=".env")
+    diskcache_directory: str = "/mnt/efs"
 
     @field_validator("cors_origins")
     def parse_cors_origin(cls, v):

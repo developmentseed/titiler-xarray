@@ -225,6 +225,13 @@ class ZarrTilerFactory(BaseTilerFactory):
                     description="Whether to expect and open zarr store with consolidated metadata",
                 ),
             ] = True,
+            anon: Annotated[
+                Optional[bool],
+                Query(
+                    title="anon",
+                    description="Use credentials to access data when false.",
+                ),
+            ] = True,
         ) -> Response:
             """Create map tile from a dataset."""
             tms = self.supported_tms.get(tileMatrixSetId)
@@ -239,6 +246,7 @@ class ZarrTilerFactory(BaseTilerFactory):
                 time_slice=time_slice,
                 tms=tms,
                 consolidated=consolidated,
+                anon=anon,
             ) as src_dst:
 
                 image = src_dst.tile(
