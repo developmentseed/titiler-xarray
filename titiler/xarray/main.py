@@ -1,12 +1,14 @@
 """titiler app."""
 
 import logging
+import os
+import shutil
 
 import rioxarray
-import xarray
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
+import titiler.xarray.reader as reader
 from titiler.core.errors import DEFAULT_STATUS_CODES, add_exception_handlers
 from titiler.core.factory import AlgorithmFactory, TMSFactory
 from titiler.core.middleware import (
@@ -72,7 +74,7 @@ if api_settings.debug:
     app.add_middleware(
         ServerTimingMiddleware,
         calls_to_track={
-            "1-xarray-open_dataset": (xarray.open_dataset,),
+            "1-xarray-open_dataset": (reader.xarray_open_dataset,),
             "2-rioxarray-reproject": (rioxarray.raster_array.RasterArray.reproject,),
         },
     )
@@ -88,3 +90,21 @@ if api_settings.debug:
 def ping():
     """Health check."""
     return {"ping": "pong!"}
+
+
+@app.get(
+    "/clear_cache",
+    description="Clear Cache",
+    summary="Clear Cache.",
+    operation_id="clear cache",
+    tags=["Clear Cache"],
+)
+def clear_cache():
+    """
+    Clear the cache.
+    """
+    print("Clearing the cache...")
+    cache_dir = os.path.expanduser(api_settings.diskcache_directory)
+    if os.path.exists(cache_dir):
+        shutil.rmtree(cache_dir)
+    return {"message": "cache cleared"}
