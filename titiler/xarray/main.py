@@ -106,5 +106,15 @@ def clear_cache():
     print("Clearing the cache...")
     cache_dir = os.path.expanduser(api_settings.diskcache_directory)
     if os.path.exists(cache_dir):
-        shutil.rmtree(cache_dir)
+        # Iterate over each directory and file in the root of the EFS
+        for root_dir, dirs, files in os.walk(cache_dir, topdown=False):
+            for name in files:
+                file_path = os.path.join(root_dir, name)
+                os.remove(file_path)
+                print(f"Deleted file: {file_path}")
+            
+            for name in dirs:
+                dir_path = os.path.join(root_dir, name)
+                shutil.rmtree(dir_path)
+                print(f"Deleted directory: {dir_path}")
     return {"message": "cache cleared"}
