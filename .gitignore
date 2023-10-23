@@ -108,3 +108,6 @@ cdk.out/
 node_modules
 cdk.context.json
 *.nc
+*cache*
+_logs.txt
+*_logs.txt

@@ -3,11 +3,10 @@
 import logging
 
 import rioxarray
-import xarray
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
-from starlette_cramjam.middleware import CompressionMiddleware
 
+import titiler.xarray.reader as reader
 from titiler.core.errors import DEFAULT_STATUS_CODES, add_exception_handlers
 from titiler.core.factory import AlgorithmFactory, TMSFactory
 from titiler.core.middleware import (
@@ -62,18 +61,6 @@ if api_settings.cors_origins:
     )
 
 app.add_middleware(
-    CompressionMiddleware,
-    minimum_size=0,
-    exclude_mediatype={
-        "image/jpeg",
-        "image/jpg",
-        "image/png",
-        "image/jp2",
-        "image/webp",
-    },
-)
-
-app.add_middleware(
     CacheControlMiddleware,
     cachecontrol=api_settings.cachecontrol,
     exclude_path={r"/healthz"},
@@ -85,7 +72,7 @@ if api_settings.debug:
     app.add_middleware(
         ServerTimingMiddleware,
         calls_to_track={
-            "1-xarray-open_dataset": (xarray.open_dataset,),
+            "1-xarray-open_dataset": (reader.xarray_open_dataset,),
             "2-rioxarray-reproject": (rioxarray.raster_array.RasterArray.reproject,),
         },
     )
