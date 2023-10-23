@@ -87,7 +87,7 @@ class LambdaStack(Stack):
         subnet_group = elasticache.CfnSubnetGroup(
             self, f"{id}-cache-subnet-group",
             description="Subnet group for ElastiCache",
-            subnet_ids=vpc.select_subnets(subnet_type=ec2.SubnetType.PRIVATE_ISOLATED).subnet_ids,
+            subnet_ids=vpc.select_subnets(subnet_type=ec2.SubnetType.PRIVATE).subnet_ids,
             cache_subnet_group_name=f"{id}-cache-subnet-group"
         )
 
