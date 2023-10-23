@@ -87,9 +87,10 @@ def xarray_open_dataset(
         if api_settings.enable_diskcache:
             file_handler = s3fs.S3Map(root=src_path, s3=filecache_fs)
         else:
-            file_handler = s3fs.S3Map(root=src_path)
+            file_handler = s3fs.S3Map(root=src_path, s3=s3fs.S3FileSystem())
     elif protocol in ["https", "http"]:
         fs = fsspec.filesystem(protocol)
+        # using cache with NetCDF files over HTTP is not supported
         if api_settings.enable_diskcache and xr_engine != "h5netcdf":
             file_handler = fs.open(src_path, fs=filecache_fs)
         else:

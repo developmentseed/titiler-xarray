@@ -110,3 +110,4 @@ cdk.context.json
 *.nc
 
 *cache*
+*logs.txt
