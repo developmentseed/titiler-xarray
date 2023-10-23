@@ -126,10 +126,6 @@ class LambdaStack(Stack):
             vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT)
         )
 
-        lambda_function.role.add_managed_policy(
-            ec2.ManagedPolicy.from_aws_managed_policy_name("AmazonVPCFullAccess")
-        )
-
         for perm in permissions:
             lambda_function.add_to_role_policy(perm)
 
