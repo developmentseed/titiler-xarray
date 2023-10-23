@@ -58,7 +58,20 @@ class LambdaStack(Stack):
 
         vpc = ec2.Vpc(
             self, f"{id}-vpc",
-            nat_gateways=1
+            nat_gateways=1,
+            subnet_configuration=[
+                ec2.SubnetConfiguration(
+                    name="Public", subnet_type=ec2.SubnetType.PUBLIC, cidr_mask=24
+                ),
+                ec2.SubnetConfiguration(
+                    name="Private Isolated", subnet_type=ec2.SubnetType.PRIVATE_ISOLATED, cidr_mask=24
+                ),
+                ec2.SubnetConfiguration(
+                    name="Private with NAT",
+                    subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT,
+                    cidr_mask=24,
+                ),
+            ],
         )
 
         security_group = ec2.SecurityGroup(
@@ -87,7 +100,7 @@ class LambdaStack(Stack):
         subnet_group = elasticache.CfnSubnetGroup(
             self, f"{id}-cache-subnet-group",
             description="Subnet group for ElastiCache",
-            subnet_ids=vpc.select_subnets(subnet_type=ec2.SubnetType.PRIVATE).subnet_ids,
+            subnet_ids=vpc.select_subnets(subnet_type=ec2.SubnetType.PRIVATE_ISOLATED).subnet_ids,
             cache_subnet_group_name=f"{id}-cache-subnet-group"
         )
 
@@ -110,7 +123,7 @@ class LambdaStack(Stack):
             environment={**DEFAULT_ENV, **environment},
             log_retention=logs.RetentionDays.ONE_WEEK,
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS)
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT)
         )
 
         lambda_function.role.add_managed_policy(
