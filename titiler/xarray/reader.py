@@ -58,17 +58,19 @@ def xarray_open_dataset(
     """Open dataset."""
 
     # Generate a unique key for this dataset
-    if type(group) == int:
-        cache_key = f"{src_path}_{group}"
-    else:
-        cache_key = src_path
+    if api_settings.enable_cache:
+        import pdb; pdb.set_trace()
+        if type(group) == int:
+            cache_key = f"{src_path}_{group}"
+        else:
+            cache_key = src_path
 
-    # Attempt to fetch the dataset from cache
-    data_bytes = client.get(cache_key)
+        # Attempt to fetch the dataset from cache
+        data_bytes = client.get(cache_key)
 
-    # If it exists in the cache, deserialize it
-    if data_bytes:
-        return pickle.loads(data_bytes)
+        # If it exists in the cache, deserialize it
+        if data_bytes:
+            return pickle.loads(data_bytes)
 
     protocol = parse_prtocol(src_path, reference=reference)
     xr_engine = xarray_engine(src_path)
@@ -87,12 +89,13 @@ def xarray_open_dataset(
     if xr_engine == "h5netcdf":
         xr_open_args["engine"] = "h5netcdf"
         xr_open_args["lock"] = False
-    elif reference:
-        xr_open_args["backend_kwargs"] = {"consolidated": False}
     else:
         # Zarr arguments
         xr_open_args["engine"] = "zarr"
         xr_open_args["consolidated"] = consolidated
+    # Additional arguments when dealing with a reference file.
+    if reference:
+        xr_open_args["backend_kwargs"] = {"consolidated": False}
 
     # Arguments for file handler
     file_handler = src_path
@@ -111,9 +114,10 @@ def xarray_open_dataset(
         file_handler = fs.get_mapper("")
 
     ds = xarray.open_dataset(file_handler, **xr_open_args)
-    # Serialize the dataset to bytes using pickle
-    data_bytes = pickle.dumps(ds)
-    client.set(cache_key, data_bytes)
+    if api_settings.enable_cache:
+        # Serialize the dataset to bytes using pickle
+        data_bytes = pickle.dumps(ds)
+        client.set(cache_key, data_bytes)
     return ds
 
 
