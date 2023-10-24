@@ -1,8 +1,9 @@
 """ZarrReader."""
 
 import contextlib
-from typing import Any, Dict, List, Optional
+import pickle
 import re
+from typing import Any, Dict, List, Optional
 
 import attr
 import fsspec
@@ -10,16 +11,18 @@ import numpy
 import s3fs
 import xarray
 from morecantile import TileMatrixSet
+from pymemcache.client.base import Client
 from rasterio.crs import CRS
 from rio_tiler.constants import WEB_MERCATOR_TMS, WGS84_CRS
 from rio_tiler.io.xarray import XarrayReader
 from rio_tiler.types import BBox
+
 from titiler.xarray.settings import ApiSettings
 
 api_settings = ApiSettings()
-from pymemcache.client.base import Client
-import pickle
+
 client = Client(api_settings.cache_host)
+
 
 def parse_prtocol(src_path: str, reference: Optional[bool] = False):
     """
@@ -34,6 +37,7 @@ def parse_prtocol(src_path: str, reference: Optional[bool] = False):
         protocol = "reference"
     return protocol
 
+
 def xarray_engine(src_path: str):
     """
     Parse xarray engine from path.
@@ -42,6 +46,7 @@ def xarray_engine(src_path: str):
         return "h5netcdf"
     else:
         return "zarr"
+
 
 def xarray_open_dataset(
     src_path: str,
@@ -72,7 +77,7 @@ def xarray_open_dataset(
     # Default args
     xr_open_args: Dict[str, Any] = {
         "decode_coords": "all",
-        "decode_times": decode_times
+        "decode_times": decode_times,
     }
     # Argument if we're opening a datatree
     if group:
