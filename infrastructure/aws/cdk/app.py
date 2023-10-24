@@ -81,23 +81,23 @@ class LambdaStack(Stack):
             self,
             "ElastiCacheSecurityGroup",
             vpc=vpc,
-            description="Allow local access to ElastiCache Redis",
+            description="Allow local access to ElastiCache memcached",
             allow_all_outbound=True,
         )
         security_group.add_ingress_rule(
             ec2.Peer.ipv4(vpc.vpc_cidr_block), ec2.Port.tcp(6379)
         )
 
-        # Create the Redis cluster
-        redis_cluster = elasticache.CfnCacheCluster(
+        # Create the memcached cluster
+        memcached_cluster = elasticache.CfnCacheCluster(
             self,
-            f"{id}-redis-cluster",
-            engine="redis",
+            f"{id}-memcached-cluster",
+            engine="memcached",
             cache_node_type="cache.t3.micro",
             num_cache_nodes=1,
             vpc_security_group_ids=[security_group.security_group_id],
             cache_subnet_group_name=f"{id}-cache-subnet-group",
-            cluster_name=f"{id}-redis-cluster",
+            cluster_name=f"{id}-memcached-cluster",
         )
 
         # Define the subnet group for the ElastiCache cluster
@@ -112,7 +112,7 @@ class LambdaStack(Stack):
         )
 
         # Add dependency - ensure subnet group is created before the cache cluster
-        redis_cluster.add_depends_on(subnet_group)
+        memcached_cluster.add_depends_on(subnet_group)
 
         lambda_function = aws_lambda.Function(
             self,
@@ -131,7 +131,7 @@ class LambdaStack(Stack):
             log_retention=logs.RetentionDays.ONE_WEEK,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(
-                subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT
+                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS
             ),
         )
 

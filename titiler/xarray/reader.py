@@ -64,7 +64,7 @@ def xarray_open_dataset(
         cache_key = src_path
 
     # Attempt to fetch the dataset from cache
-    data_bytes = client.get(cache_key)
+    data_bytes = client.gets(cache_key)
 
     # If it exists in the cache, deserialize it
     if data_bytes:
