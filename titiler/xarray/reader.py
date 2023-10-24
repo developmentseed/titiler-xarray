@@ -21,8 +21,19 @@ from titiler.xarray.settings import ApiSettings
 
 api_settings = ApiSettings()
 
-client = Client(api_settings.cache_host)
+from pymemcache.client.retrying import RetryingClient
+from pymemcache.exceptions import MemcacheUnexpectedCloseError
 
+# ignore_exc: True to cause the "get", "gets", "get_many" and "gets_many" calls to treat any errors as cache misses
+# connect_timeout: seconds to wait for a connection to the memcached server
+# timeout: seconds to wait for send or recv calls on the socket connected to memcached
+base_client = Client(api_settings.cache_host, ignore_exc=True, connect_timeout=20, timeout=20)
+client = RetryingClient(
+    base_client,
+    attempts=3,
+    retry_delay=0.01,
+    retry_for=[MemcacheUnexpectedCloseError]
+)
 
 def parse_prtocol(src_path: str, reference: Optional[bool] = False):
     """
@@ -59,7 +70,6 @@ def xarray_open_dataset(
 
     # Generate a unique key for this dataset
     if api_settings.enable_cache:
-        import pdb; pdb.set_trace()
         if type(group) == int:
             cache_key = f"{src_path}_{group}"
         else:
@@ -95,13 +105,14 @@ def xarray_open_dataset(
         xr_open_args["consolidated"] = consolidated
     # Additional arguments when dealing with a reference file.
     if reference:
+        xr_open_args["consolidated"] = False
         xr_open_args["backend_kwargs"] = {"consolidated": False}
 
     # Arguments for file handler
     file_handler = src_path
     if protocol == "s3":
         fs = s3fs.S3FileSystem()
-        file_handler = fs.open(src_path)
+        file_handler = s3fs.S3Map(root=src_path, s3=fs)
     elif protocol == "https" or protocol == "http":
         fs = fsspec.filesystem(protocol)
         file_handler = fs.open(src_path)
