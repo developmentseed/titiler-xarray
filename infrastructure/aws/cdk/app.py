@@ -85,7 +85,7 @@ class LambdaStack(Stack):
             allow_all_outbound=True,
         )
         security_group.add_ingress_rule(
-            ec2.Peer.ipv4(vpc.vpc_cidr_block), ec2.Port.tcp(6379)
+            ec2.Peer.ipv4(vpc.vpc_cidr_block), ec2.Port.tcp(11211)
         )
 
         # Create the memcached cluster
