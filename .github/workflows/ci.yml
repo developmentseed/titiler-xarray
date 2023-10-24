@@ -99,6 +99,7 @@ jobs:
           TITILER_XARRAY_DEBUG: True
           STACK_ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }}
           STACK_STAGE: feature3
+          TITILER_XARRAY_CACHE_HOST: ${{ secrets.ELASTICACHE_HOST }}
 
       # Build and deploy to the development environment whenever there is a push to main or dev
       - name: Build & Deploy Development

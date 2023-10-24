@@ -2,6 +2,7 @@
 
 import contextlib
 from typing import Any, Dict, List, Optional
+import re
 
 import attr
 import fsspec
@@ -13,7 +14,34 @@ from rasterio.crs import CRS
 from rio_tiler.constants import WEB_MERCATOR_TMS, WGS84_CRS
 from rio_tiler.io.xarray import XarrayReader
 from rio_tiler.types import BBox
+from titiler.xarray.settings import ApiSettings
 
+api_settings = ApiSettings()
+from pymemcache.client.base import Client
+import pickle
+client = Client(api_settings.cache_host)
+
+def parse_prtocol(src_path: str, reference: Optional[bool] = False):
+    """
+    Parse protocol from path.
+    """
+    match = re.match(r"^(s3|https|http)", src_path)
+    protocol = "file"
+    if match:
+        protocol = match.group(0)
+    # override protocol if reference
+    if reference:
+        protocol = "reference"
+    return protocol
+
+def xarray_engine(src_path: str):
+    """
+    Parse xarray engine from path.
+    """
+    if src_path.endswith(".nc"):
+        return "h5netcdf"
+    else:
+        return "zarr"
 
 def xarray_open_dataset(
     src_path: str,
@@ -24,28 +52,51 @@ def xarray_open_dataset(
 ) -> xarray.Dataset:
     """Open dataset."""
 
-    # Default arguments for xarray.open_dataset
-    file_handler = src_path
+    # Generate a unique key for this dataset
+    if type(group) == int:
+        cache_key = f"{src_path}_{group}"
+    else:
+        cache_key = src_path
+
+    # Attempt to fetch the dataset from cache
+    data_bytes = client.get(cache_key)
+
+    # If it exists in the cache, deserialize it
+    if data_bytes:
+        return pickle.loads(data_bytes)
+
+    protocol = parse_prtocol(src_path, reference=reference)
+    xr_engine = xarray_engine(src_path)
+
+    # Arguments for xarray.open_dataset
+    # Default args
     xr_open_args: Dict[str, Any] = {
         "decode_coords": "all",
-        "decode_times": decode_times,
+        "decode_times": decode_times
     }
+    # Argument if we're opening a datatree
+    if group:
+        xr_open_args["group"] = group
 
     # NetCDF arguments
-    if src_path.endswith(".nc"):
-        if src_path.startswith("s3://"):
-            fs = s3fs.S3FileSystem()
-            file_handler = fs.open(src_path)
-        elif src_path.startswith("http"):
-            fs = fsspec.filesystem("http")
-            file_handler = fs.open(src_path)
+    if xr_engine == "h5netcdf":
         xr_open_args["engine"] = "h5netcdf"
+        xr_open_args["lock"] = False
+    elif reference:
+        xr_open_args["backend_kwargs"] = {"consolidated": False}
     else:
         # Zarr arguments
         xr_open_args["engine"] = "zarr"
         xr_open_args["consolidated"] = consolidated
 
-    # Arguments for kerchunk reference
+    # Arguments for file handler
+    file_handler = src_path
+    if protocol == "s3":
+        fs = s3fs.S3FileSystem()
+        file_handler = fs.open(src_path)
+    elif protocol == "https" or protocol == "http":
+        fs = fsspec.filesystem(protocol)
+        file_handler = fs.open(src_path)
     if reference:
         fs = fsspec.filesystem(
             "reference",
@@ -53,12 +104,11 @@ def xarray_open_dataset(
             remote_options={"anon": True},
         )
         file_handler = fs.get_mapper("")
-        xr_open_args["backend_kwargs"] = {"consolidated": False}
 
-    # Argument if we're opening a datatree
-    if group:
-        xr_open_args["group"] = group
     ds = xarray.open_dataset(file_handler, **xr_open_args)
+    # Serialize the dataset to bytes using pickle
+    data_bytes = pickle.dumps(ds)
+    client.set(cache_key, data_bytes)
     return ds
 
 
