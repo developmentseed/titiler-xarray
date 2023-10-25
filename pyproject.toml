@@ -39,6 +39,7 @@ dependencies = [
     "pydantic-settings~=2.0",
     "pymemcache~=4.0",
     "pandas==1.5.3",
+    "redis",
 ]
 
 [project.optional-dependencies]
