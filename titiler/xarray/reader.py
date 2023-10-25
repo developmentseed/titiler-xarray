@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 import attr
 import fsspec
 import numpy
+import redis
 import s3fs
 import xarray
 from morecantile import TileMatrixSet
@@ -20,11 +21,11 @@ from titiler.xarray.settings import ApiSettings
 
 api_settings = ApiSettings()
 
-import redis
 pool = redis.ConnectionPool(host=api_settings.cache_host, port=6379, db=0)
-client = redis.Redis(connection_pool=pool) 
+client = redis.Redis(connection_pool=pool)
 
-def parse_prtocol(src_path: str, reference: Optional[bool] = False):
+
+def parse_protocol(src_path: str, reference: Optional[bool] = False):
     """
     Parse protocol from path.
     """
@@ -48,6 +49,23 @@ def xarray_engine(src_path: str):
         return "zarr"
 
 
+def get_file_handler(src_path: str, protocol: str, reference: Optional[bool] = False):
+    """
+    Returns the appropriate file handler based on the protocol.
+    """
+    if protocol == "s3":
+        fs = s3fs.S3FileSystem()
+        return s3fs.S3Map(root=src_path, s3=fs)
+    elif protocol in ["https", "http"]:
+        fs = fsspec.filesystem(protocol)
+        return fs.open(src_path)
+    elif reference:
+        fs = fsspec.filesystem("reference", fo=src_path, remote_options={"anon": True})
+        return fs.get_mapper("")
+    else:
+        return src_path
+
+
 def xarray_open_dataset(
     src_path: str,
     group: Optional[Any] = None,
@@ -57,22 +75,16 @@ def xarray_open_dataset(
 ) -> xarray.Dataset:
     """Open dataset."""
 
-    # Generate a unique key for this dataset
+    # Generate cache key and attempt to fetch the dataset from cache
     if api_settings.enable_cache:
-        if type(group) == int:
-            cache_key = f"{src_path}_{group}"
-        else:
-            cache_key = src_path
-
-        # Attempt to fetch the dataset from cache
+        cache_key = f"{src_path}_{group}" if type(group) == int else src_path
         data_bytes = client.get(cache_key)
-
-        # If it exists in the cache, deserialize it
         if data_bytes:
             return pickle.loads(data_bytes)
 
-    protocol = parse_prtocol(src_path, reference=reference)
+    protocol = parse_protocol(src_path, reference=reference)
     xr_engine = xarray_engine(src_path)
+    file_handler = get_file_handler(src_path, protocol, reference)
 
     # Arguments for xarray.open_dataset
     # Default args
@@ -96,22 +108,6 @@ def xarray_open_dataset(
     if reference:
         xr_open_args["consolidated"] = False
         xr_open_args["backend_kwargs"] = {"consolidated": False}
-
-    # Arguments for file handler
-    file_handler = src_path
-    if protocol == "s3":
-        fs = s3fs.S3FileSystem()
-        file_handler = s3fs.S3Map(root=src_path, s3=fs)
-    elif protocol == "https" or protocol == "http":
-        fs = fsspec.filesystem(protocol)
-        file_handler = fs.open(src_path)
-    if reference:
-        fs = fsspec.filesystem(
-            "reference",
-            fo=src_path,
-            remote_options={"anon": True},
-        )
-        file_handler = fs.get_mapper("")
 
     ds = xarray.open_dataset(file_handler, **xr_open_args)
     if api_settings.enable_cache:
