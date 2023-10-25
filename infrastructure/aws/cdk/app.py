@@ -3,6 +3,7 @@
 import os
 from typing import Any, Dict, List, Optional
 
+import aws_cdk
 from aws_cdk import App, CfnOutput, Duration, Stack, Tags
 from aws_cdk import aws_apigatewayv2_alpha as apigw
 from aws_cdk import aws_cloudwatch as cloudwatch

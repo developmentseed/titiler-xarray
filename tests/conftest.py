@@ -23,7 +23,6 @@ def pytest_sessionstart(session):
     test_cache_dir = "fsspec_test_cache"
     os.environ["DISKCACHE_DIRECTORY"] = test_cache_dir
     os.mkdir(test_cache_dir)
-    
 
 
 def pytest_sessionfinish(session, exitstatus):

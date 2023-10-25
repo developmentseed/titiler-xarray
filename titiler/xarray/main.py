@@ -112,7 +112,7 @@ def clear_cache():
                 file_path = os.path.join(root_dir, name)
                 os.remove(file_path)
                 print(f"Deleted file: {file_path}")
-            
+
             for name in dirs:
                 dir_path = os.path.join(root_dir, name)
                 shutil.rmtree(dir_path)
