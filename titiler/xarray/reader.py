@@ -8,7 +8,9 @@ from typing import Any, Dict, List, Optional
 import attr
 import fsspec
 import numpy
-import redis
+
+# error: Library stubs not installed for "redis", https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports
+import redis  # type: ignore
 import s3fs
 import xarray
 from morecantile import TileMatrixSet
