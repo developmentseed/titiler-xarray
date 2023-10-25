@@ -11,7 +11,6 @@ import numpy
 import s3fs
 import xarray
 from morecantile import TileMatrixSet
-from pymemcache.client.base import Client
 from rasterio.crs import CRS
 from rio_tiler.constants import WEB_MERCATOR_TMS, WGS84_CRS
 from rio_tiler.io.xarray import XarrayReader
@@ -21,19 +20,9 @@ from titiler.xarray.settings import ApiSettings
 
 api_settings = ApiSettings()
 
-from pymemcache.client.retrying import RetryingClient
-from pymemcache.exceptions import MemcacheUnexpectedCloseError
-
-# ignore_exc: True to cause the "get", "gets", "get_many" and "gets_many" calls to treat any errors as cache misses
-# connect_timeout: seconds to wait for a connection to the memcached server
-# timeout: seconds to wait for send or recv calls on the socket connected to memcached
-base_client = Client(api_settings.cache_host, ignore_exc=True, connect_timeout=20, timeout=20)
-client = RetryingClient(
-    base_client,
-    attempts=3,
-    retry_delay=0.01,
-    retry_for=[MemcacheUnexpectedCloseError]
-)
+import redis
+pool = redis.ConnectionPool(host=api_settings.cache_host, port=6379, db=0)
+client = redis.Redis(connection_pool=pool) 
 
 def parse_prtocol(src_path: str, reference: Optional[bool] = False):
     """
