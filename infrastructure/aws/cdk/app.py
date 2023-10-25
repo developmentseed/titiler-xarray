@@ -93,7 +93,7 @@ class LambdaStack(Stack):
             self,
             f"{id}-redis-cluster",
             engine="redis",
-            cache_node_type="cache.m6g.xlarge",
+            cache_node_type="cache.t3.small",
             num_cache_nodes=1,
             vpc_security_group_ids=[security_group.security_group_id],
             cache_subnet_group_name=f"{id}-cache-subnet-group",
