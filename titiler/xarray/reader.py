@@ -47,7 +47,7 @@ def get_cache_args(protocol: str) -> Dict[str, Any]:
     """
     return {
         "target_protocol": protocol,
-        "cache_storage": api_settings.diskcache_directory,
+        "cache_storage": api_settings.fsspec_cache_directory,
         "remote_options": {"anon": True},
     }
 
@@ -57,13 +57,13 @@ def get_reference_args(src_path: str, anon: Optional[bool]) -> Dict[str, Any]:
     Get the reference arguments for the given source path.
     """
     base_args = {"fo": src_path, "remote_options": {"anon": anon}}
-    if api_settings.enable_diskcache:
+    if api_settings.enable_fsspec_cache:
         base_args.update(get_cache_args("file"))
     return base_args
 
 
 def get_filesystem(
-    src_path: str, protocol: str, reference: Optional[bool], anon: Optional[bool]
+    src_path: str, protocol: str, enable_fsspec_cache: bool, reference: Optional[bool], anon: Optional[bool]
 ):
     """
     Get the filesystem for the given source path.
@@ -71,7 +71,7 @@ def get_filesystem(
     if protocol == "s3":
         s3_filesystem = (
             fsspec.filesystem("filecache", **get_cache_args(protocol))
-            if api_settings.enable_diskcache
+            if enable_fsspec_cache
             else s3fs.S3FileSystem()
         )
         return s3fs.S3Map(root=src_path, s3=s3_filesystem)
@@ -81,7 +81,7 @@ def get_filesystem(
             fs.open(
                 src_path, fs=fsspec.filesystem("filecache", **get_cache_args(protocol))
             )
-            if api_settings.enable_diskcache
+            if enable_fsspec_cache
             else fs.open(src_path)
         )
     elif reference:
@@ -92,10 +92,10 @@ def get_filesystem(
 
 
 cache = dc.Cache(  # type: ignore
-    directory="/tmp/diskcache",
+    directory=api_settings.diskcache_directory,
     eviction_policy="least-frequently-used",
-    max_size=2**30 * 5,
-)  # 5 GB
+    max_size=2**30 * 5, # 5 GB
+)
 
 
 @cache.memoize(tag="diskcache_xarray_open_dataset")
@@ -134,14 +134,15 @@ def xarray_open_dataset(
     if group:
         xr_open_args["group"] = group
 
-    if api_settings.enable_diskcache and (
+    if api_settings.enable_fsspec_cache and (
         xr_engine == "h5netcdf" or consolidated is False
     ):
         if xr_engine == "h5netcdf":
             xr_open_args["lock"] = False
-        return diskcache_xarray_open_dataset(src_path, xr_open_args)
+        file_handler = get_filesystem(src_path, protocol, False, reference, anon)
+        return diskcache_xarray_open_dataset(file_handler, xr_open_args)
 
-    file_handler = get_filesystem(src_path, protocol, reference, anon)
+    file_handler = get_filesystem(src_path, protocol, api_settings.enable_diskcache, reference, anon)
     return xarray.open_dataset(file_handler, **xr_open_args)
 
 

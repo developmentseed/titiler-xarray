@@ -11,10 +11,11 @@ class ApiSettings(BaseSettings):
     cors_origins: str = "*"
     cors_allow_methods: str = "GET"
     cachecontrol: str = "public, max-age=3600"
-    enable_diskcache: bool = True
+    enable_fsspec_cache: bool = True
     root_path: str = ""
     debug: bool = False
-    diskcache_directory: str = "/mnt/efs"
+    fsspec_cache_directory: str = "/mnt/efs"
+    diskcache_directory: str = "/tmp/diskcache"
 
     model_config = SettingsConfigDict(env_prefix="TITILER_XARRAY_", env_file=".env")
 

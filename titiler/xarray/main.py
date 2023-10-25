@@ -104,7 +104,7 @@ def clear_cache():
     Clear the cache.
     """
     print("Clearing the cache...")
-    cache_dir = os.path.expanduser(api_settings.diskcache_directory)
+    cache_dir = os.path.expanduser(api_settings.fsspec_cache_directory)
     if os.path.exists(cache_dir):
         # Iterate over each directory and file in the root of the EFS
         for root_dir, dirs, files in os.walk(cache_dir, topdown=False):

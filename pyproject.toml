@@ -28,7 +28,7 @@ dependencies = [
     "cftime",
     "diskcache",
     "h5netcdf",
-    "h5py",
+    "h5pyd",
     "xarray",
     "rioxarray",
     "zarr",
