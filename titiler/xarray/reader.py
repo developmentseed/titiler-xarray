@@ -63,7 +63,11 @@ def get_reference_args(src_path: str, anon: Optional[bool]) -> Dict[str, Any]:
 
 
 def get_filesystem(
-    src_path: str, protocol: str, enable_fsspec_cache: bool, reference: Optional[bool], anon: Optional[bool]
+    src_path: str,
+    protocol: str,
+    enable_fsspec_cache: bool,
+    reference: Optional[bool],
+    anon: Optional[bool],
 ):
     """
     Get the filesystem for the given source path.
@@ -94,7 +98,7 @@ def get_filesystem(
 cache = dc.Cache(  # type: ignore
     directory=api_settings.diskcache_directory,
     eviction_policy="least-frequently-used",
-    max_size=2**30 * 5, # 5 GB
+    max_size=2**30 * 5,  # 5 GB
 )
 
 
@@ -142,7 +146,9 @@ def xarray_open_dataset(
         file_handler = get_filesystem(src_path, protocol, False, reference, anon)
         return diskcache_xarray_open_dataset(file_handler, xr_open_args)
 
-    file_handler = get_filesystem(src_path, protocol, api_settings.enable_diskcache, reference, anon)
+    file_handler = get_filesystem(
+        src_path, protocol, api_settings.enable_diskcache, reference, anon
+    )
     return xarray.open_dataset(file_handler, **xr_open_args)
 
 
