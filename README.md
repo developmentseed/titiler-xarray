@@ -15,7 +15,7 @@ virtualenv .venv
 
 python -m pip install -e . uvicorn
 source .venv/bin/activate
-uvicorn titiler.xarray.main:app --reload
+FSSPEC_CACHE_DIRECTORY="fsspec_cache" uvicorn titiler.xarray.main:app --reload
 ```
 
 To access the docs, visit http://127.0.0.1:8000/docs.

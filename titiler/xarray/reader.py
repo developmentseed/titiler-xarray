@@ -147,7 +147,7 @@ def xarray_open_dataset(
         return diskcache_xarray_open_dataset(file_handler, xr_open_args)
 
     file_handler = get_filesystem(
-        src_path, protocol, api_settings.enable_diskcache, reference, anon
+        src_path, protocol, api_settings.enable_fsspec_cache, reference, anon
     )
     return xarray.open_dataset(file_handler, **xr_open_args)
 
