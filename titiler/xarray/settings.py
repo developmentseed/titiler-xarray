@@ -14,9 +14,9 @@ class ApiSettings(BaseSettings):
     enable_diskcache: bool = True
     root_path: str = ""
     debug: bool = False
+    diskcache_directory: str = "/mnt/efs"
 
     model_config = SettingsConfigDict(env_prefix="TITILER_XARRAY_", env_file=".env")
-    diskcache_directory: str = "/mnt/efs"
 
     @field_validator("cors_origins")
     def parse_cors_origin(cls, v):

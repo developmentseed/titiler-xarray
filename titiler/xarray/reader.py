@@ -5,6 +5,7 @@ import re
 from typing import Any, Dict, List, Optional
 
 import attr
+import diskcache as dc
 import fsspec
 import numpy
 import s3fs
@@ -19,29 +20,55 @@ from titiler.xarray.settings import ApiSettings
 
 api_settings = ApiSettings()
 
-
-def parse_prtocol(src_path: str, reference: Optional[bool] = False):
-    """
-    Parse protocol from path.
-    """
+def parse_protocol(src_path: str, reference: Optional[bool] = False) -> str:
     match = re.match(r"^(s3|https|http)", src_path)
-    protocol = "file"
-    if match:
-        protocol = match.group(0)
-    # override protocol if reference
     if reference:
-        protocol = "reference"
-    return protocol
-
-
-def xarray_engine(src_path: str):
-    """
-    Parse xarray engine from path.
-    """
-    if src_path.endswith(".nc"):
-        return "h5netcdf"
+        return "reference"
+    elif match:
+        return match.group(0)
     else:
-        return "zarr"
+        return "file"
+
+
+def xarray_engine(src_path: str) -> str:
+    return "h5netcdf" if src_path.endswith(".nc") else "zarr"
+
+
+def get_cache_args(protocol: str) -> Dict[str, Any]:
+    return {
+        "target_protocol": protocol,
+        "cache_storage": api_settings.diskcache_directory,
+        "remote_options": {"anon": True}
+    }
+
+def get_reference_args(src_path: str, anon: bool) -> Dict[str, Any]:
+    base_args = {"fo": src_path, "remote_options": {"anon": anon}}
+    if api_settings.enable_diskcache:
+        base_args.update(get_cache_args("file"))
+    return base_args
+
+def get_filesystem_and_handler(src_path: str, protocol: str, reference: bool, anon: bool):
+    if protocol == "s3":
+        s3_filesystem = fsspec.filesystem("filecache", **get_cache_args(protocol)) if api_settings.enable_diskcache else s3fs.S3FileSystem()
+        return s3fs.S3Map(root=src_path, s3=s3_filesystem)
+    elif protocol in ["https", "http"]:
+        fs = fsspec.filesystem(protocol)
+        return fs.open(src_path, fs=fsspec.filesystem("filecache", **get_cache_args(protocol))) if api_settings.enable_diskcache else fs.open(src_path)
+    elif reference:
+        reference_args = get_reference_args(src_path, anon)
+        return fsspec.filesystem("reference", **reference_args).get_mapper("")
+    else:
+        return src_path
+
+
+cache = dc.Cache(  # type: ignore
+    directory="/tmp/diskcache",
+    eviction_policy="least-frequently-used",
+    max_size=2**30 * 5,
+)  # 5 GB
+@cache.memoize(tag="diskcache_xarray_open_dataset")
+def diskcache_xarray_open_dataset(src_path: str, xr_open_args: Dict[str, Any]) -> xarray.Dataset:
+    return xarray.open_dataset(src_path, **xr_open_args)
 
 
 def xarray_open_dataset(
@@ -52,11 +79,9 @@ def xarray_open_dataset(
     consolidated: Optional[bool] = True,
     anon: Optional[bool] = True,
 ) -> xarray.Dataset:
-    """Open dataset."""
-    protocol = parse_prtocol(src_path, reference=reference)
+    protocol = parse_protocol(src_path, reference=reference)
     xr_engine = xarray_engine(src_path)
 
-    # xarray open dataset arguments
     xr_open_args: Dict[str, Any] = {
         "decode_coords": "all",
         "decode_times": decode_times,
@@ -69,43 +94,13 @@ def xarray_open_dataset(
     if group:
         xr_open_args["group"] = group
 
-    # cache arguments
-    filecache_fs = None
-    if api_settings.enable_diskcache:
-        cache_arguments = {
-            "target_protocol": protocol,
-            "cache_storage": api_settings.diskcache_directory,
-            "remote_options": {"anon": anon},
-        }
-        if reference:
-            cache_arguments["target_options"] = {"fo": src_path}
-        filecache_fs = fsspec.filesystem("filecache", **cache_arguments)
+    if api_settings.enable_diskcache and (xr_engine == "h5netcdf" or consolidated == False):
+        if xr_engine == "h5netcdf":
+            xr_open_args["lock"] = False
+        return diskcache_xarray_open_dataset(src_path, xr_open_args)
 
-    # filesystem open file arguments
-    file_handler = src_path
-    if protocol == "s3":
-        if api_settings.enable_diskcache:
-            file_handler = s3fs.S3Map(root=src_path, s3=filecache_fs)
-        else:
-            file_handler = s3fs.S3Map(root=src_path, s3=s3fs.S3FileSystem())
-    elif protocol in ["https", "http"]:
-        fs = fsspec.filesystem(protocol)
-        # using cache with NetCDF files over HTTP is not supported
-        if api_settings.enable_diskcache and xr_engine != "h5netcdf":
-            file_handler = fs.open(src_path, fs=filecache_fs)
-        else:
-            file_handler = fs.open(src_path)
-    elif reference:
-        if api_settings.enable_diskcache:
-            fs = filecache_fs
-        else:
-            reference_args = {"fo": src_path, "remote_options": {"anon": anon}}
-            fs = fsspec.filesystem("reference", **reference_args)
-        file_handler = fs.get_mapper("")
-
-    ds = xarray.open_dataset(file_handler, **xr_open_args)
-    return ds
-
+    file_handler = get_filesystem_and_handler(src_path, protocol, reference, anon)
+    return xarray.open_dataset(file_handler, **xr_open_args)
 
 def get_variable(
     ds: xarray.Dataset,

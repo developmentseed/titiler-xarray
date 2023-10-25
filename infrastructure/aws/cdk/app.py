@@ -113,6 +113,7 @@ class LambdaStack(Stack):
             timeout=Duration.seconds(timeout),
             environment={**DEFAULT_ENV, **environment},
             log_retention=logs.RetentionDays.ONE_WEEK,
+            ephemeral_storage_size=aws_cdk.Size.gibibytes(10),
             filesystem=aws_lambda.FileSystem.from_efs_access_point(
                 access_point, "/mnt/efs"
             ),  # Mounting it to /mnt/efs in Lambda
