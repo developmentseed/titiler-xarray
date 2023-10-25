@@ -40,7 +40,6 @@ dependencies = [
     "pymemcache~=4.0",
     "pandas==1.5.3",
     "redis",
-    "types-redis",
 ]
 
 [project.optional-dependencies]
