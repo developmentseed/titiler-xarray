@@ -36,7 +36,7 @@ def xarray_engine(src_path: str) -> str:
     """
     Determine the xarray engine to use based on the source path.
     """
-    return "h5netcdf" if src_path.endswith(".nc") else "zarr"
+    return "h5netcdf" if src_path.endswith(".nc") or src_path.endswith(".nc4") else "zarr"
 
 
 def get_cache_args(protocol: str) -> Dict[str, Any]:
@@ -138,7 +138,8 @@ def xarray_open_dataset(
 
     if api_settings.enable_fsspec_cache and xr_engine == "h5netcdf":
         xr_open_args["lock"] = False
-        file_handler = get_filesystem(src_path, protocol, False, reference, anon)
+        fs = fsspec.filesystem(protocol)
+        file_handler = fs.open(src_path)
         return diskcache_xarray_open_dataset(file_handler, xr_open_args)
 
     file_handler = get_filesystem(
@@ -162,6 +163,13 @@ def get_variable(
     if ds.dims.get("longitude"):
         longitude_var_name = "longitude"
     da = da.rename({latitude_var_name: "y", longitude_var_name: "x"})
+    required_dims = ["time", "y", "x"]
+    if not all(dim in da.dims for dim in required_dims):
+        raise Exception(
+            f"Dataset must have the following dimensions: {required_dims}"
+        )
+    if da.dims != required_dims:
+        da = da.transpose(*required_dims)
 
     # TODO: add test
     if drop_dim:
