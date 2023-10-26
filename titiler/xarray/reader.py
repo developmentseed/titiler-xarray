@@ -26,9 +26,7 @@ def parse_protocol(src_path: str, reference: Optional[bool] = False) -> str:
     Parse the protocol from the source path.
     """
     match = re.match(r"^(s3|https|http)", src_path)
-    if reference:
-        return "reference"
-    elif match:
+    if match:
         return match.group(0)
     else:
         return "file"
@@ -52,13 +50,13 @@ def get_cache_args(protocol: str) -> Dict[str, Any]:
     }
 
 
-def get_reference_args(src_path: str, anon: Optional[bool]) -> Dict[str, Any]:
+def get_reference_args(src_path: str, protocol: str, anon: Optional[bool]) -> Dict[str, Any]:
     """
     Get the reference arguments for the given source path.
     """
     base_args = {"fo": src_path, "remote_options": {"anon": anon}}
     if api_settings.enable_fsspec_cache:
-        base_args.update(get_cache_args("file"))
+        base_args.update(get_cache_args(protocol))
     return base_args
 
 
@@ -79,6 +77,9 @@ def get_filesystem(
             else s3fs.S3FileSystem()
         )
         return s3fs.S3Map(root=src_path, s3=s3_filesystem)
+    elif reference:
+        reference_args = get_reference_args(src_path, protocol, anon)
+        return fsspec.filesystem("reference", **reference_args).get_mapper("")    
     elif protocol in ["https", "http"]:
         fs = fsspec.filesystem(protocol)
         return (
@@ -88,9 +89,6 @@ def get_filesystem(
             if enable_fsspec_cache
             else fs.open(src_path)
         )
-    elif reference:
-        reference_args = get_reference_args(src_path, anon)
-        return fsspec.filesystem("reference", **reference_args).get_mapper("")
     else:
         return src_path
 
@@ -138,11 +136,8 @@ def xarray_open_dataset(
     if group:
         xr_open_args["group"] = group
 
-    if api_settings.enable_fsspec_cache and (
-        xr_engine == "h5netcdf" or consolidated is False
-    ):
-        if xr_engine == "h5netcdf":
-            xr_open_args["lock"] = False
+    if api_settings.enable_fsspec_cache and xr_engine == "h5netcdf":
+        xr_open_args["lock"] = False
         file_handler = get_filesystem(src_path, protocol, False, reference, anon)
         return diskcache_xarray_open_dataset(file_handler, xr_open_args)
 
