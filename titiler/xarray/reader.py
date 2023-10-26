@@ -51,16 +51,16 @@ def xarray_engine(src_path: str):
         return "zarr"
 
 
-def get_file_handler(src_path: str, protocol: str, reference: Optional[bool] = False):
+def get_file_handler(src_path: str, protocol: str, xr_engine: str, reference: Optional[bool] = False):
     """
     Returns the appropriate file handler based on the protocol.
     """
-    if protocol == "s3":
+    if protocol in ["https", "http"] or xr_engine == "h5netcdf":
+        fs = fsspec.filesystem(protocol)
+        return fs.open(src_path)    
+    elif protocol == "s3":
         fs = s3fs.S3FileSystem()
         return s3fs.S3Map(root=src_path, s3=fs)
-    elif protocol in ["https", "http"]:
-        fs = fsspec.filesystem(protocol)
-        return fs.open(src_path)
     elif reference:
         fs = fsspec.filesystem("reference", fo=src_path, remote_options={"anon": True})
         return fs.get_mapper("")
@@ -86,7 +86,7 @@ def xarray_open_dataset(
 
     protocol = parse_protocol(src_path, reference=reference)
     xr_engine = xarray_engine(src_path)
-    file_handler = get_file_handler(src_path, protocol, reference)
+    file_handler = get_file_handler(src_path, protocol, xr_engine, reference)
 
     # Arguments for xarray.open_dataset
     # Default args
