@@ -134,10 +134,7 @@ def get_variable(
     if ds.dims.get("longitude"):
         longitude_var_name = "longitude"
     da = da.rename({latitude_var_name: "y", longitude_var_name: "x"})
-    dims_order = list(da.dims)
-    # Check if 'y' comes before 'x'
-    if dims_order.index('y') > dims_order.index('x'):
-        da = da.transpose('y', 'x') 
+    da = da.transpose('time', 'y', 'x')
 
     # TODO: add test
     if drop_dim:
