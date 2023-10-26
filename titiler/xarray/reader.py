@@ -45,7 +45,7 @@ def xarray_engine(src_path: str):
     """
     Parse xarray engine from path.
     """
-    if src_path.endswith(".nc"):
+    if src_path.endswith(".nc") or src_path.endswith(".nc4"):
         return "h5netcdf"
     else:
         return "zarr"
@@ -134,6 +134,13 @@ def get_variable(
     if ds.dims.get("longitude"):
         longitude_var_name = "longitude"
     da = da.rename({latitude_var_name: "y", longitude_var_name: "x"})
+    required_dims = ["time", "y", "x"]
+    if not all(dim in da.dims for dim in required_dims):
+        raise Exception(
+            f"Dataset must have the following dimensions: {required_dims}"
+        )
+    if da.dims != required_dims:
+        da = da.transpose(*required_dims)
 
     # TODO: add test
     if drop_dim:
