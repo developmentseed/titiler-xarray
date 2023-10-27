@@ -121,6 +121,7 @@
                 <h2>Visualize Zarr</h2>
                 <h4>Step 1: Enter the URL of your Zarr store</h4>
                 <input type="text" id="url-input" placeholder="Enter URL">
+                <input type="text" id="group-input" placeholder="Zarr group (optional)">
                 <br />
 
                 <input type="checkbox" id="reference" name="reference">
@@ -204,12 +205,17 @@
                     const loadingIcon = document.getElementById('loading-icon-variables');
                     loadingIcon.style.display = 'inline-block';
                     var urlValue = document.getElementById("url-input").value;
+                    var groupValue = document.getElementById("group-input").value;
                     var reference = document.getElementById("reference").checked;
                     var consolidated = document.getElementById("consolidated").checked;
 
                     // Fetch data from a URL
-                    fetch(`/variables?url=${encodeURIComponent(urlValue)}&reference=${reference}&consolidated=${consolidated}`) // Replace with the actual URL
-                        .then(response => response.json()) // Assuming server responds with JSON
+                    var variablesPath = `/variables?url=${encodeURIComponent(urlValue)}&reference=${reference}&consolidated=${consolidated}`
+                    if (groupValue) {
+                        variablesPath += `&group=${groupValue}`
+                    }
+                    fetch(variablesPath)
+                        .then(response => response.json())
                         .then(data => {
                             loadingIcon.style.display = 'none';
                             var variableInput = document.getElementById("variable-input")
@@ -256,11 +262,16 @@
                     const loadingIcon = document.getElementById('loading-icon-histogram');
                     loadingIcon.style.display = 'inline-block';
                     var urlValue = document.getElementById("url-input").value;
+                    var groupValue = document.getElementById("group-input").value;
                     var reference = document.getElementById("reference").checked;
                     var consolidated = document.getElementById("consolidated").checked;
                     var variableInput = getVariableInput();
                     // Fetch data from a URL
-                    fetch(`/histogram?url=${encodeURIComponent(urlValue)}&variable=${encodeURIComponent(variableInput)}&reference=${reference}&consolidated=${consolidated}`) // Replace this with the actual URL
+                    var histogramPath = `/histogram?url=${encodeURIComponent(urlValue)}&variable=${encodeURIComponent(variableInput)}&reference=${reference}&consolidated=${consolidated}`
+                    if (groupValue) {
+                        histogramPath += `&group=${groupValue}`
+                    }
+                    fetch(histogramPath) // Replace this with the actual URL
                         .then(response => response.json()) // Assuming server responds with JSON
                         .then(data => {
                             loadingIcon.style.display = 'none';
@@ -313,6 +324,7 @@
                 // Go button action
                 document.getElementById("go-btn").addEventListener("click", function() {
                     var urlValue = document.getElementById("url-input").value;
+                    var groupValue = document.getElementById("group-input").value;
                     var reference = document.getElementById("reference").checked;
                     var variableValue = getVariableInput();
                     var rescaleValue = document.getElementById("rescale-input").value;
@@ -329,6 +341,9 @@
                         }
                         if (colormapValue) {
                             href += `&colormap_name=${encodeURIComponent(colormapValue)}`;
+                        }
+                        if (groupValue) {
+                            href += `&group=${groupValue}`;
                         }
                         window.location.href = href;
                     }

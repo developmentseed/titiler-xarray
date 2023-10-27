@@ -1,7 +1,7 @@
 """TiTiler.xarray factory."""
 
 from dataclasses import dataclass
-from typing import Dict, List, Literal, Optional, Type
+from typing import Dict, List, Literal, Optional, Type, Union
 from urllib.parse import urlencode
 
 import jinja2
@@ -40,8 +40,10 @@ class ZarrTilerFactory(BaseTilerFactory):
         def variable_endpoint(
             url: Annotated[str, Query(description="Dataset URL")],
             group: Annotated[
-                Optional[int],
-                Query(description="Select a specific Zarr Group (Zoom Level)."),
+                Optional[Union[str, int]],
+                Query(
+                    description="Select a specific zarr group from a zarr hierarchy."
+                ),
             ] = None,
             reference: Annotated[
                 Optional[bool],
@@ -84,8 +86,10 @@ class ZarrTilerFactory(BaseTilerFactory):
                 Query(description="Xarray Variable"),
             ],
             group: Annotated[
-                Optional[int],
-                Query(description="Select a specific Zarr Group (Zoom Level)."),
+                Optional[Union[str, int]],
+                Query(
+                    description="Select a specific zarr group from a zarr hierarchy."
+                ),
             ] = None,
             reference: Annotated[
                 bool,
@@ -226,9 +230,9 @@ class ZarrTilerFactory(BaseTilerFactory):
                 ),
             ] = True,
             group: Annotated[
-                Optional[str],
+                Optional[Union[str, int]],
                 Query(
-                    description="Select a specific Zarr Group from a hierarchical dataset."
+                    description="Select a specific zarr group from a zarr hierarchy."
                 ),
             ] = None,
         ) -> Response:
@@ -293,8 +297,8 @@ class ZarrTilerFactory(BaseTilerFactory):
                 f"Identifier selecting one of the TileMatrixSetId supported (default: '{self.default_tms}')",
             ] = self.default_tms,
             group: Annotated[
-                Optional[int],
-                Query(description="Select a specific Zarr Group (Zoom Level)."),
+                Optional[Union[str, int]],
+                Query(description="Select a zarr Group from a zarr hierarchy."),
             ] = None,
             multiscale: Annotated[
                 bool,
@@ -374,8 +378,7 @@ class ZarrTilerFactory(BaseTilerFactory):
                 "tile_format",
                 "tile_scale",
                 "minzoom",
-                "maxzoom",
-                "group",
+                "maxzoom"
             ]
             qs = [
                 (key, value)
@@ -386,7 +389,6 @@ class ZarrTilerFactory(BaseTilerFactory):
                 tiles_url += f"?{urlencode(qs)}"
 
             tms = self.supported_tms.get(tileMatrixSetId)
-
             with self.reader(
                 url,
                 variable=variable,
@@ -435,9 +437,19 @@ class ZarrTilerFactory(BaseTilerFactory):
                     description="Whether to expect a consolidated dataset",
                 ),
             ] = True,
+            group: Annotated[
+                Optional[Union[str, int]],
+                Query(
+                    description="Select a specific zarr group from a zarr hierarchy."
+                ),
+            ] = None,
         ):
             with self.reader(
-                url, variable=variable, reference=reference, consolidated=consolidated
+                url,
+                variable=variable,
+                reference=reference,
+                consolidated=consolidated,
+                group=group,
             ) as src_dst:
                 boolean_mask = ~np.isnan(src_dst.input)
                 data_values = src_dst.input.values[boolean_mask]
@@ -465,8 +477,10 @@ class ZarrTilerFactory(BaseTilerFactory):
                 Query(description="Xarray Variable"),
             ] = None,
             group: Annotated[
-                Optional[int],
-                Query(description="Select a specific Zarr Group (Zoom Level)."),
+                Optional[Union[str, int]],
+                Query(
+                    description="Select a specific zarr group from a zarr hierarchy."
+                ),
             ] = None,
             multiscale: Annotated[
                 bool,
