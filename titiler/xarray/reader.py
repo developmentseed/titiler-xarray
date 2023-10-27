@@ -135,7 +135,10 @@ def get_variable(
     if ds.dims.get("longitude"):
         longitude_var_name = "longitude"
     da = da.rename({latitude_var_name: "y", longitude_var_name: "x"})
-    da = da.transpose('time', 'y', 'x')
+    if 'time' in da.dims:
+        da = da.transpose('time', 'y', 'x')
+    else:
+        da = da.transpose('y', 'x')
 
     # TODO: add test
     if drop_dim:
