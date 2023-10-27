@@ -378,7 +378,7 @@ class ZarrTilerFactory(BaseTilerFactory):
                 "tile_format",
                 "tile_scale",
                 "minzoom",
-                "maxzoom"
+                "maxzoom",
             ]
             qs = [
                 (key, value)
