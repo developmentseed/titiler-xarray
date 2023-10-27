@@ -26,7 +26,6 @@ api_settings = ApiSettings()
 pool = redis.ConnectionPool(host=api_settings.cache_host, port=6379, db=0)
 client = redis.Redis(connection_pool=pool)
 
-
 def parse_protocol(src_path: str, reference: Optional[bool] = False):
     """
     Parse protocol from path.
@@ -45,7 +44,9 @@ def xarray_engine(src_path: str):
     """
     Parse xarray engine from path.
     """
-    if src_path.endswith(".nc") or src_path.endswith(".nc4"):
+    H5NETCDF_EXTENSIONS = [".nc", ".nc4", ".hdf", ".hdf5", ".h5"]
+    lower_filename = src_path.lower()
+    if any(lower_filename.endswith(ext) for ext in H5NETCDF_EXTENSIONS):
         return "h5netcdf"
     else:
         return "zarr"
@@ -79,7 +80,7 @@ def xarray_open_dataset(
 
     # Generate cache key and attempt to fetch the dataset from cache
     if api_settings.enable_cache:
-        cache_key = f"{src_path}_{group}" if type(group) == int else src_path
+        cache_key = f"{src_path}_{group}" if group != None else src_path
         data_bytes = client.get(cache_key)
         if data_bytes:
             return pickle.loads(data_bytes)

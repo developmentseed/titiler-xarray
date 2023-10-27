@@ -225,6 +225,10 @@ class ZarrTilerFactory(BaseTilerFactory):
                     description="Whether to expect and open zarr store with consolidated metadata",
                 ),
             ] = True,
+            group: Annotated[
+                Optional[str],
+                Query(description="Select a specific Zarr Group from a hierarchical dataset."),
+            ] = None,
         ) -> Response:
             """Create map tile from a dataset."""
             tms = self.supported_tms.get(tileMatrixSetId)
@@ -232,7 +236,7 @@ class ZarrTilerFactory(BaseTilerFactory):
             with self.reader(
                 url,
                 variable=variable,
-                group=z if multiscale else None,
+                group=z if multiscale else group,
                 reference=reference,
                 decode_times=decode_times,
                 drop_dim=drop_dim,
