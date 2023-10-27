@@ -26,6 +26,7 @@ api_settings = ApiSettings()
 pool = redis.ConnectionPool(host=api_settings.cache_host, port=6379, db=0)
 client = redis.Redis(connection_pool=pool)
 
+
 def parse_protocol(src_path: str, reference: Optional[bool] = False):
     """
     Parse protocol from path.
@@ -52,13 +53,15 @@ def xarray_engine(src_path: str):
         return "zarr"
 
 
-def get_file_handler(src_path: str, protocol: str, xr_engine: str, reference: Optional[bool] = False):
+def get_file_handler(
+    src_path: str, protocol: str, xr_engine: str, reference: Optional[bool] = False
+):
     """
     Returns the appropriate file handler based on the protocol.
     """
     if protocol in ["https", "http"] or xr_engine == "h5netcdf":
         fs = fsspec.filesystem(protocol)
-        return fs.open(src_path)    
+        return fs.open(src_path)
     elif protocol == "s3":
         fs = s3fs.S3FileSystem()
         return s3fs.S3Map(root=src_path, s3=fs)
@@ -80,7 +83,7 @@ def xarray_open_dataset(
 
     # Generate cache key and attempt to fetch the dataset from cache
     if api_settings.enable_cache:
-        cache_key = f"{src_path}_{group}" if group != None else src_path
+        cache_key = f"{src_path}_{group}" if group is not None else src_path
         data_bytes = client.get(cache_key)
         if data_bytes:
             return pickle.loads(data_bytes)
@@ -135,10 +138,10 @@ def get_variable(
     if ds.dims.get("longitude"):
         longitude_var_name = "longitude"
     da = da.rename({latitude_var_name: "y", longitude_var_name: "x"})
-    if 'time' in da.dims:
-        da = da.transpose('time', 'y', 'x')
+    if "time" in da.dims:
+        da = da.transpose("time", "y", "x")
     else:
-        da = da.transpose('y', 'x')
+        da = da.transpose("y", "x")
 
     # TODO: add test
     if drop_dim:

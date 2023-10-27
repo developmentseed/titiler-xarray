@@ -227,7 +227,9 @@ class ZarrTilerFactory(BaseTilerFactory):
             ] = True,
             group: Annotated[
                 Optional[str],
-                Query(description="Select a specific Zarr Group from a hierarchical dataset."),
+                Query(
+                    description="Select a specific Zarr Group from a hierarchical dataset."
+                ),
             ] = None,
         ) -> Response:
             """Create map tile from a dataset."""
