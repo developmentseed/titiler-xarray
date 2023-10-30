@@ -138,15 +138,16 @@ def get_variable(
     if ds.dims.get("longitude"):
         longitude_var_name = "longitude"
     da = da.rename({latitude_var_name: "y", longitude_var_name: "x"})
-    if "time" in da.dims:
-        da = da.transpose("time", "y", "x")
-    else:
-        da = da.transpose("y", "x")
 
     # TODO: add test
     if drop_dim:
         dim_to_drop, dim_val = drop_dim.split("=")
         da = da.sel({dim_to_drop: dim_val}).drop(dim_to_drop)
+
+    if "time" in da.dims:
+        da = da.transpose("time", "y", "x")
+    else:
+        da = da.transpose("y", "x")
 
     if (da.x > 180).any():
         # Adjust the longitude coordinates to the -180 to 180 range
