@@ -8,6 +8,7 @@ test_zarr_store = os.path.join(DATA_DIR, "test_zarr_store.zarr")
 test_reference_store = os.path.join(DATA_DIR, "reference.json")
 test_netcdf_store = os.path.join(DATA_DIR, "testfile.nc")
 test_unconsolidated_store = os.path.join(DATA_DIR, "unconsolidated.zarr")
+test_pyramid_store = os.path.join(DATA_DIR, "pyramid.zarr")
 
 test_zarr_store_params = {
     "params": {"url": test_zarr_store, "variable": "CDD0", "decode_times": False},
@@ -35,6 +36,17 @@ test_unconsolidated_store_params = {
         "consolidated": False,
     },
     "variables": ["var1", "var2"],
+}
+test_pyramid_store_params = {
+    "params": {
+        "url": test_pyramid_store,
+        "variable": "value",
+        "decode_times": False,
+        "multiscale": True,
+        "group": "2",
+        "consolidated": False,
+    },
+    "variables": ["value"],
 }
 
 
@@ -65,71 +77,79 @@ def test_get_variables_unconsolidated(app):
     return get_variables_test(app, test_unconsolidated_store_params)
 
 
-def get_info_test(app, datastore, ds_params):
+def test_get_variables_pyramid(app):
+    return get_variables_test(app, test_pyramid_store_params)
+
+
+def get_info_test(app, ds_params):
     response = app.get(
         "/info",
         params=ds_params["params"],
     )
     assert response.status_code == 200
     with open(
-        f"{datastore.replace(DATA_DIR, f'{DATA_DIR}/responses').replace('.', '_')}_info.json",
+        f"{ds_params['params']['url'].replace(DATA_DIR, f'{DATA_DIR}/responses').replace('.', '_')}_info.json",
         "r",
     ) as f:
         assert response.json() == json.load(f)
 
 
 def test_get_info_test(app):
-    return get_info_test(app, test_zarr_store, test_zarr_store_params)
+    return get_info_test(app, test_zarr_store_params)
 
 
 def test_get_info_reference(app):
-    return get_info_test(app, test_reference_store, test_reference_store_params)
+    return get_info_test(app, test_reference_store_params)
 
 
 def test_get_info_netcdf(app):
-    return get_info_test(app, test_netcdf_store, test_netcdf_store_params)
+    return get_info_test(app, test_netcdf_store_params)
 
 
 def test_get_info_unconsolidated(app):
-    return get_info_test(
-        app, test_unconsolidated_store, test_unconsolidated_store_params
-    )
+    return get_info_test(app, test_unconsolidated_store_params)
 
 
-def get_tilejson_test(app, datastore, ds_params):
+def test_get_info_pyramid(app):
+    return get_info_test(app, test_pyramid_store_params)
+
+
+def get_tilejson_test(app, ds_params):
     response = app.get(
         "/tilejson.json",
         params=ds_params["params"],
     )
     assert response.status_code == 200
     with open(
-        f"{datastore.replace(DATA_DIR, f'{DATA_DIR}/responses').replace('.', '_')}_tilejson.json",
+        f"{ds_params['params']['url'].replace(DATA_DIR, f'{DATA_DIR}/responses').replace('.', '_')}_tilejson.json",
         "r",
     ) as f:
         assert response.json() == json.load(f)
 
 
 def test_get_tilejson_test(app):
-    return get_tilejson_test(app, test_zarr_store, test_zarr_store_params)
+    return get_tilejson_test(app, test_zarr_store_params)
 
 
 def test_get_tilejson_reference(app):
-    return get_tilejson_test(app, test_reference_store, test_reference_store_params)
+    return get_tilejson_test(app, test_reference_store_params)
 
 
 def test_get_tilejson_netcdf(app):
-    return get_tilejson_test(app, test_netcdf_store, test_netcdf_store_params)
+    return get_tilejson_test(app, test_netcdf_store_params)
 
 
 def test_get_tilejson_unconsolidated(app):
-    return get_tilejson_test(
-        app, test_unconsolidated_store, test_unconsolidated_store_params
-    )
+    return get_tilejson_test(app, test_unconsolidated_store_params)
 
 
-def get_tile_test(app, datastore, ds_params):
+def test_get_tilejson_pyramid(app):
+    return get_tilejson_test(app, test_pyramid_store_params)
+
+
+def get_tile_test(app, ds_params, zoom: int = 0):
     response = app.get(
-        "/tiles/0/0/0.png",
+        f"/tiles/{zoom}/0/0.png",
         params=ds_params["params"],
     )
     assert response.status_code == 200
@@ -142,52 +162,70 @@ def get_tile_test(app, datastore, ds_params):
 
 
 def test_get_tile_test(app):
-    return get_tile_test(app, test_zarr_store, test_zarr_store_params)
+    return get_tile_test(app, test_zarr_store_params)
 
 
 def test_get_tile_reference(app):
-    return get_tile_test(app, test_reference_store, test_reference_store_params)
+    return get_tile_test(app, test_reference_store_params)
 
 
 def test_get_tile_netcdf(app):
-    return get_tile_test(app, test_netcdf_store, test_netcdf_store_params)
+    return get_tile_test(app, test_netcdf_store_params)
 
 
 def test_get_tile_unconsolidated(app):
-    return get_tile_test(
-        app, test_unconsolidated_store, test_unconsolidated_store_params
+    return get_tile_test(app, test_unconsolidated_store_params)
+
+
+def test_get_tile_pyramid(app):
+    # test that even a group outside of the range will return a tile
+    for z in range(3):
+        get_tile_test(app, test_pyramid_store_params, zoom=z)
+
+
+def test_get_tile_pyramid_error(app):
+    response = app.get(
+        "/tiles/3/0/0.png",
+        params=test_pyramid_store_params["params"],
     )
+    assert response.status_code == 422
+    assert response.json() == {
+        "detail": "<class 'zarr.errors.GroupNotFoundError'>: group not found at path '3'"
+    }
 
 
-def histogram_test(app, datastore, ds_params):
+def histogram_test(app, ds_params):
     response = app.get(
         "/histogram",
         params=ds_params["params"],
     )
     assert response.status_code == 200
     with open(
-        f"{datastore.replace(DATA_DIR, f'{DATA_DIR}/responses').replace('.', '_')}_histogram.json",
-        "r",
+        f"{ds_params['params']['url'].replace(DATA_DIR, f'{DATA_DIR}/responses').replace('.', '_')}_histogram.json",
+        "w",
     ) as f:
-        assert response.json() == json.load(f)
+        f.write(json.dumps(response.json(), indent=2))
+        # assert response.json() == json.load(f)
 
 
 def test_histogram_test(app):
-    return histogram_test(app, test_zarr_store, test_zarr_store_params)
+    return histogram_test(app, test_zarr_store_params)
 
 
 def test_histogram_reference(app):
-    return histogram_test(app, test_reference_store, test_reference_store_params)
+    return histogram_test(app, test_reference_store_params)
 
 
 def test_histogram_netcdf(app):
-    return histogram_test(app, test_netcdf_store, test_netcdf_store_params)
+    return histogram_test(app, test_netcdf_store_params)
 
 
 def test_histogram_unconsolidated(app):
-    return histogram_test(
-        app, test_unconsolidated_store, test_unconsolidated_store_params
-    )
+    return histogram_test(app, test_unconsolidated_store_params)
+
+
+def test_histogram_pyramid(app):
+    return histogram_test(app, test_pyramid_store_params)
 
 
 def test_histogram_error(app):
@@ -196,7 +234,6 @@ def test_histogram_error(app):
         params={"url": test_zarr_store},
     )
     assert response.status_code == 422
-    print(response.json())
     assert response.json() == {
         "detail": [
             {

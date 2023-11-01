@@ -1,6 +1,7 @@
 """ZarrReader."""
 
 import contextlib
+import re
 from typing import Any, Dict, List, Optional
 
 import attr
@@ -15,6 +16,51 @@ from rio_tiler.io.xarray import XarrayReader
 from rio_tiler.types import BBox
 
 
+def parse_protocol(src_path: str, reference: Optional[bool] = False):
+    """
+    Parse protocol from path.
+    """
+    match = re.match(r"^(s3|https|http)", src_path)
+    protocol = "file"
+    if match:
+        protocol = match.group(0)
+    # override protocol if reference
+    if reference:
+        protocol = "reference"
+    return protocol
+
+
+def xarray_engine(src_path: str):
+    """
+    Parse xarray engine from path.
+    """
+    H5NETCDF_EXTENSIONS = [".nc", ".nc4", ".hdf", ".hdf5", ".h5"]
+    lower_filename = src_path.lower()
+    if any(lower_filename.endswith(ext) for ext in H5NETCDF_EXTENSIONS):
+        return "h5netcdf"
+    else:
+        return "zarr"
+
+
+def get_file_handler(
+    src_path: str, protocol: str, xr_engine: str, reference: Optional[bool] = False
+):
+    """
+    Returns the appropriate file handler based on the protocol.
+    """
+    if protocol in ["https", "http"] or xr_engine == "h5netcdf":
+        fs = fsspec.filesystem(protocol)
+        return fs.open(src_path)
+    elif protocol == "s3":
+        fs = s3fs.S3FileSystem()
+        return s3fs.S3Map(root=src_path, s3=fs)
+    elif reference:
+        fs = fsspec.filesystem("reference", fo=src_path, remote_options={"anon": True})
+        return fs.get_mapper("")
+    else:
+        return src_path
+
+
 def xarray_open_dataset(
     src_path: str,
     group: Optional[Any] = None,
@@ -24,42 +70,53 @@ def xarray_open_dataset(
 ) -> xarray.Dataset:
     """Open dataset."""
 
-    # Default arguments for xarray.open_dataset
-    file_handler = src_path
+    protocol = parse_protocol(src_path, reference=reference)
+    xr_engine = xarray_engine(src_path)
+    file_handler = get_file_handler(src_path, protocol, xr_engine, reference)
+
+    # Arguments for xarray.open_dataset
+    # Default args
     xr_open_args: Dict[str, Any] = {
         "decode_coords": "all",
         "decode_times": decode_times,
     }
+    # Argument if we're opening a datatree
+    if type(group) == int or type(group) == str:
+        xr_open_args["group"] = group
 
     # NetCDF arguments
-    if src_path.endswith(".nc"):
-        if src_path.startswith("s3://"):
-            fs = s3fs.S3FileSystem()
-            file_handler = fs.open(src_path)
-        elif src_path.startswith("http"):
-            fs = fsspec.filesystem("http")
-            file_handler = fs.open(src_path)
+    if xr_engine == "h5netcdf":
         xr_open_args["engine"] = "h5netcdf"
+        xr_open_args["lock"] = False
     else:
         # Zarr arguments
         xr_open_args["engine"] = "zarr"
         xr_open_args["consolidated"] = consolidated
-
-    # Arguments for kerchunk reference
+    # Additional arguments when dealing with a reference file.
     if reference:
-        fs = fsspec.filesystem(
-            "reference",
-            fo=src_path,
-            remote_options={"anon": True},
-        )
-        file_handler = fs.get_mapper("")
+        xr_open_args["consolidated"] = False
         xr_open_args["backend_kwargs"] = {"consolidated": False}
-
-    # Argument if we're opening a datatree
-    if group:
-        xr_open_args["group"] = group
     ds = xarray.open_dataset(file_handler, **xr_open_args)
     return ds
+
+
+def assign_spatial_coordinates(da: xarray.DataArray) -> xarray.DataArray:
+    """
+    Assign spatial coordinates to DataArray.
+    """
+    if "x" not in da.dims and "y" not in da.dims:
+        latitude_var_name = "lat"
+        longitude_var_name = "lon"
+        if "latitude" in da.dims:
+            latitude_var_name = "latitude"
+        if "longitude" in da.dims:
+            longitude_var_name = "longitude"
+        da = da.rename({latitude_var_name: "y", longitude_var_name: "x"})
+    if "time" in da.dims:
+        da = da.transpose("time", "y", "x")
+    else:
+        da = da.transpose("y", "x")
+    return da
 
 
 def get_variable(
@@ -70,14 +127,7 @@ def get_variable(
 ) -> xarray.DataArray:
     """Get Xarray variable as DataArray."""
     da = ds[variable]
-    latitude_var_name = "lat"
-    longitude_var_name = "lon"
-    if ds.dims.get("latitude"):
-        latitude_var_name = "latitude"
-    if ds.dims.get("longitude"):
-        longitude_var_name = "longitude"
-    da = da.rename({latitude_var_name: "y", longitude_var_name: "x"})
-
+    da = assign_spatial_coordinates(da)
     # TODO: add test
     if drop_dim:
         dim_to_drop, dim_val = drop_dim.split("=")
