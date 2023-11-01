@@ -34,7 +34,7 @@ def xarray_engine(src_path: str):
     """
     Parse xarray engine from path.
     """
-    H5NETCDF_EXTENSIONS = [".nc", ".nc4", ".hdf", ".hdf5", ".h5"]
+    H5NETCDF_EXTENSIONS = [".nc", ".nc4"]
     lower_filename = src_path.lower()
     if any(lower_filename.endswith(ext) for ext in H5NETCDF_EXTENSIONS):
         return "h5netcdf"
