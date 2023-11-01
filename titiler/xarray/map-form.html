@@ -261,6 +261,15 @@
                         return num.toFixed(4);
                     }
                 }
+                function isNonEmptyString(str) {
+                    return typeof str === 'string' && str.length > 0;
+                }
+
+                function isStringInteger(str) {
+                    if (!str.trim()) return false;  // Check for empty strings after trimming white space
+                    const num = parseFloat(str);
+                    return !isNaN(num) && Number.isInteger(num) && String(num) === str;
+                }
 
                 document.getElementById("get-histogram-btn").addEventListener("click", function() {
                     const loadingIcon = document.getElementById('loading-icon-histogram');
@@ -346,10 +355,10 @@
                         if (colormapValue) {
                             href += `&colormap_name=${encodeURIComponent(colormapValue)}`;
                         }
-                        if (typeof groupValue == 'string') {
+                        if (isNonEmptyString(groupValue)) {
                             href += `&group=${groupValue}`;
                         }
-                        if (typeof parseFloat(groupValue) == 'number') {
+                        if (isStringInteger(groupValue)) {
                             href += `&multiscale=true`;
                         }
                         window.location.href = href;
