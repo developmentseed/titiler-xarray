@@ -80,8 +80,9 @@ def xarray_open_dataset(
         "decode_coords": "all",
         "decode_times": decode_times,
     }
+
     # Argument if we're opening a datatree
-    if type(group) == int or type(group) == str:
+    if type(group) == int:
         xr_open_args["group"] = group
 
     # NetCDF arguments
@@ -100,9 +101,12 @@ def xarray_open_dataset(
     return ds
 
 
-def assign_spatial_coordinates(da: xarray.DataArray) -> xarray.DataArray:
+def arrange_coordinates(da: xarray.DataArray) -> xarray.DataArray:
     """
-    Assign spatial coordinates to DataArray.
+    Arrange coordinates to DataArray.
+    An rioxarray.exceptions.InvalidDimensionOrder error is raised if the coordinates are not in the correct order time, y, and x.
+    See: https://github.com/corteva/rioxarray/discussions/674
+    We conform to using x and y as the spatial dimension names. You can do this a bit more elegantly with metpy but that is a heavy dependency.
     """
     if "x" not in da.dims and "y" not in da.dims:
         latitude_var_name = "lat"
@@ -127,7 +131,7 @@ def get_variable(
 ) -> xarray.DataArray:
     """Get Xarray variable as DataArray."""
     da = ds[variable]
-    da = assign_spatial_coordinates(da)
+    da = arrange_coordinates(da)
     # TODO: add test
     if drop_dim:
         dim_to_drop, dim_val = drop_dim.split("=")

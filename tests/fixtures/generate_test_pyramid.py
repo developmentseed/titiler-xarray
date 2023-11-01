@@ -1,9 +1,14 @@
-import xarray as xr
+""" Generate a pyramid for tests. """
+from datetime import datetime
+
 import numpy as np
-import random
-from datetime import datetime, timedelta
+import xarray as xr
+
 
 def generate_random_pixel_data(n):
+    """
+    Generate random pixel data for a given number of pixels.
+    """
     time_data = [datetime.now()]
     y_data = np.linspace(-90, 90, n)
     x_data = np.linspace(-180, 180, n)
@@ -12,6 +17,9 @@ def generate_random_pixel_data(n):
 
 
 def create_dataset(time, y, x, value):
+    """
+    Create an xarray dataset from the given data.
+    """
     return xr.Dataset(
         {
             "value": (("time", "y", "x"), value.reshape((1, len(y), len(x)))),
@@ -22,6 +30,7 @@ def create_dataset(time, y, x, value):
             "x": x,
         },
     )
+
 
 time1, y1, x1, value1 = generate_random_pixel_data(10)
 ds1 = create_dataset(time1, y1, x1, value1)

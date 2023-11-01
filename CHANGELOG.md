@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Improved pyramid support through group parameter
+
+* Add support for a group parameter in `/histogram` route.
+* Catch `zarr.errors.GroupNotFoundError` and raise 422 in the `tiles` route. When the `multiscale` parameter is `true` but the zoom level doesn't exist as a group in the zarr hierarchy, this error is raised.
+
 ## v0.1.1
 
 Support for NetCDF and making consolidated metadata optional. See https://github.com/developmentseed/titiler-xarray/pull/39.
