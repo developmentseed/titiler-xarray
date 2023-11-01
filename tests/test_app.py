@@ -202,10 +202,9 @@ def histogram_test(app, ds_params):
     assert response.status_code == 200
     with open(
         f"{ds_params['params']['url'].replace(DATA_DIR, f'{DATA_DIR}/responses').replace('.', '_')}_histogram.json",
-        "w",
+        "r",
     ) as f:
-        f.write(json.dumps(response.json(), indent=2))
-        # assert response.json() == json.load(f)
+        assert response.json() == json.load(f)
 
 
 def test_histogram_test(app):
