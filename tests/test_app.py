@@ -189,9 +189,7 @@ def test_get_tile_pyramid_error(app):
         params=test_pyramid_store_params["params"],
     )
     assert response.status_code == 422
-    assert response.json() == {
-        "detail": "group not found at path '3'"
-    }
+    assert response.json() == {"detail": "group not found at path '3'"}
 
 
 def histogram_test(app, ds_params):
