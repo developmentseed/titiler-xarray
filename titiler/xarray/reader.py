@@ -25,19 +25,13 @@ def parse_protocol(src_path: str, reference: Optional[bool] = False) -> str:
     """
     Parse the protocol from the source path.
     """
-    match = re.match(r"^(s3|https|http)", src_path)
+    if reference:
+        return "reference"    
+    match = re.match(r"^(s3|https|http)", src_path)    
     if match:
         return match.group(0)
     else:
         return "file"
-
-
-def xarray_engine(src_path: str) -> str:
-    """
-    Determine the xarray engine to use based on the source path.
-    """
-    return "h5netcdf" if src_path.endswith(".nc") or src_path.endswith(".nc4") else "zarr"
-
 
 def get_cache_args(protocol: str) -> Dict[str, Any]:
     """
@@ -92,22 +86,16 @@ def get_filesystem(
     else:
         return src_path
 
-
-cache = dc.Cache(  # type: ignore
-    directory=api_settings.diskcache_directory,
-    eviction_policy="least-frequently-used",
-    max_size=2**30 * 5,  # 5 GB
-)
-
-
-@cache.memoize(tag="diskcache_xarray_open_dataset")
-def diskcache_xarray_open_dataset(
-    src_path: str, xr_open_args: Dict[str, Any]
-) -> xarray.Dataset:
+def xarray_engine(src_path: str):
     """
-    Open dataset using diskcache.
+    Parse xarray engine from path.
     """
-    return xarray.open_dataset(src_path, **xr_open_args)
+    H5NETCDF_EXTENSIONS = [".nc", ".nc4"]
+    lower_filename = src_path.lower()
+    if any(lower_filename.endswith(ext) for ext in H5NETCDF_EXTENSIONS):
+        return "h5netcdf"
+    else:
+        return "zarr"
 
 
 def xarray_open_dataset(
@@ -123,29 +111,60 @@ def xarray_open_dataset(
     """
     protocol = parse_protocol(src_path, reference=reference)
     xr_engine = xarray_engine(src_path)
+    file_handler = get_filesystem(
+        src_path, protocol, api_settings.enable_fsspec_cache, reference, anon
+    )
 
+    # Arguments for xarray.open_dataset
+    # Default args
     xr_open_args: Dict[str, Any] = {
         "decode_coords": "all",
         "decode_times": decode_times,
         "engine": xr_engine,
     }
-    if xr_engine != "h5netcdf":
-        xr_open_args["consolidated"] = consolidated
-    if reference:
-        xr_open_args["backend_kwargs"] = {"consolidated": False}
-    if group:
+
+    # Argument if we're opening a datatree
+    if type(group) == int:
         xr_open_args["group"] = group
 
-    if api_settings.enable_fsspec_cache and xr_engine == "h5netcdf":
+    # NetCDF arguments
+    if xr_engine == "h5netcdf":
+        xr_open_args["engine"] = "h5netcdf"
         xr_open_args["lock"] = False
-        fs = fsspec.filesystem(protocol)
-        file_handler = fs.open(src_path)
-        return diskcache_xarray_open_dataset(file_handler, xr_open_args)
+        xr_open_args["consolidated"] = False
+    else:
+        # Zarr arguments
+        xr_open_args["engine"] = "zarr"
+        xr_open_args["consolidated"] = consolidated
+    # Additional arguments when dealing with a reference file.
+    if reference:
+        xr_open_args["consolidated"] = False
+        xr_open_args["backend_kwargs"] = {"consolidated": False}
 
-    file_handler = get_filesystem(
-        src_path, protocol, api_settings.enable_fsspec_cache, reference, anon
-    )
-    return xarray.open_dataset(file_handler, **xr_open_args)
+    ds = xarray.open_dataset(file_handler, **xr_open_args)
+    return ds
+
+
+def arrange_coordinates(da: xarray.DataArray) -> xarray.DataArray:
+    """
+    Arrange coordinates to DataArray.
+    An rioxarray.exceptions.InvalidDimensionOrder error is raised if the coordinates are not in the correct order time, y, and x.
+    See: https://github.com/corteva/rioxarray/discussions/674
+    We conform to using x and y as the spatial dimension names. You can do this a bit more elegantly with metpy but that is a heavy dependency.
+    """
+    if "x" not in da.dims and "y" not in da.dims:
+        latitude_var_name = "lat"
+        longitude_var_name = "lon"
+        if "latitude" in da.dims:
+            latitude_var_name = "latitude"
+        if "longitude" in da.dims:
+            longitude_var_name = "longitude"
+        da = da.rename({latitude_var_name: "y", longitude_var_name: "x"})
+    if "time" in da.dims:
+        da = da.transpose("time", "y", "x")
+    else:
+        da = da.transpose("y", "x")
+    return da
 
 
 def get_variable(
@@ -156,18 +175,7 @@ def get_variable(
 ) -> xarray.DataArray:
     """Get Xarray variable as DataArray."""
     da = ds[variable]
-    latitude_var_name = "lat"
-    longitude_var_name = "lon"
-    if ds.dims.get("latitude"):
-        latitude_var_name = "latitude"
-    if ds.dims.get("longitude"):
-        longitude_var_name = "longitude"
-    da = da.rename({latitude_var_name: "y", longitude_var_name: "x"})
-    dims_order = list(da.dims)
-    # Check if 'y' comes before 'x'
-    if dims_order.index('y') > dims_order.index('x'):
-        da = da.transpose('y', 'x')
-
+    da = arrange_coordinates(da)
     # TODO: add test
     if drop_dim:
         dim_to_drop, dim_val = drop_dim.split("=")
@@ -200,7 +208,6 @@ def get_variable(
             da = da.isel(time=0)
 
     return da
-
 
 @attr.s
 class ZarrReader(XarrayReader):

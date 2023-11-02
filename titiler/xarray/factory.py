@@ -41,7 +41,9 @@ class ZarrTilerFactory(BaseTilerFactory):
             url: Annotated[str, Query(description="Dataset URL")],
             group: Annotated[
                 Optional[int],
-                Query(description="Select a specific Zarr Group (Zoom Level)."),
+                Query(
+                    description="Select a specific zarr group from a zarr hierarchy. Could be associated with a zoom level or dataset."
+                ),
             ] = None,
             reference: Annotated[
                 Optional[bool],
@@ -85,7 +87,9 @@ class ZarrTilerFactory(BaseTilerFactory):
             ],
             group: Annotated[
                 Optional[int],
-                Query(description="Select a specific Zarr Group (Zoom Level)."),
+                Query(
+                    description="Select a specific zarr group from a zarr hierarchy, can be for pyramids or datasets. Can be used to open a dataset in HDF5 files."
+                ),
             ] = None,
             reference: Annotated[
                 bool,
@@ -235,7 +239,6 @@ class ZarrTilerFactory(BaseTilerFactory):
         ) -> Response:
             """Create map tile from a dataset."""
             tms = self.supported_tms.get(tileMatrixSetId)
-
             with self.reader(
                 url,
                 variable=variable,
@@ -296,15 +299,10 @@ class ZarrTilerFactory(BaseTilerFactory):
             ] = self.default_tms,
             group: Annotated[
                 Optional[int],
-                Query(description="Select a specific Zarr Group (Zoom Level)."),
-            ] = None,
-            multiscale: Annotated[
-                bool,
                 Query(
-                    title="multiscale",
-                    description="Whether the dataset has multiscale groups (Zoom levels)",
+                    description="Select a specific zarr group from a zarr hierarchy, can be for pyramids or datasets. Can be used to open a dataset in HDF5 files."
                 ),
-            ] = False,
+            ] = None,
             reference: Annotated[
                 bool,
                 Query(
@@ -437,9 +435,19 @@ class ZarrTilerFactory(BaseTilerFactory):
                     description="Whether to expect a consolidated dataset",
                 ),
             ] = True,
+            group: Annotated[
+                Optional[int],
+                Query(
+                    description="Select a specific zarr group from a zarr hierarchy, can be for pyramids or datasets. Can be used to open a dataset in HDF5 files."
+                ),
+            ] = None,
         ):
             with self.reader(
-                url, variable=variable, reference=reference, consolidated=consolidated
+                url,
+                variable=variable,
+                reference=reference,
+                consolidated=consolidated,
+                group=group,
             ) as src_dst:
                 boolean_mask = ~np.isnan(src_dst.input)
                 data_values = src_dst.input.values[boolean_mask]
@@ -468,15 +476,10 @@ class ZarrTilerFactory(BaseTilerFactory):
             ] = None,
             group: Annotated[
                 Optional[int],
-                Query(description="Select a specific Zarr Group (Zoom Level)."),
-            ] = None,
-            multiscale: Annotated[
-                bool,
                 Query(
-                    title="multiscale",
-                    description="Whether the dataset has multiscale groups (Zoom levels)",
+                    description="Select a specific zarr group from a zarr hierarchy, can be for pyramids or datasets. Can be used to open a dataset in HDF5 files."
                 ),
-            ] = False,
+            ] = None,
             reference: Annotated[
                 bool,
                 Query(
