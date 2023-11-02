@@ -190,7 +190,7 @@ def test_get_tile_pyramid_error(app):
     )
     assert response.status_code == 422
     assert response.json() == {
-        "detail": "<class 'zarr.errors.GroupNotFoundError'>: group not found at path '3'"
+        "detail": "group not found at path '3'"
     }
 
 

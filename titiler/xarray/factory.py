@@ -6,8 +6,7 @@ from urllib.parse import urlencode
 
 import jinja2
 import numpy as np
-import zarr
-from fastapi import Depends, HTTPException, Path, Query
+from fastapi import Depends, Path, Query
 from pydantic import conint
 from rio_tiler.models import Info
 from starlette.requests import Request
@@ -233,44 +232,39 @@ class ZarrTilerFactory(BaseTilerFactory):
         ) -> Response:
             """Create map tile from a dataset."""
             tms = self.supported_tms.get(tileMatrixSetId)
-            try:
-                with self.reader(
-                    url,
-                    variable=variable,
-                    group=z if multiscale else None,
-                    reference=reference,
-                    decode_times=decode_times,
-                    drop_dim=drop_dim,
-                    time_slice=time_slice,
-                    tms=tms,
-                    consolidated=consolidated,
-                ) as src_dst:
+            with self.reader(
+                url,
+                variable=variable,
+                group=z if multiscale else None,
+                reference=reference,
+                decode_times=decode_times,
+                drop_dim=drop_dim,
+                time_slice=time_slice,
+                tms=tms,
+                consolidated=consolidated,
+            ) as src_dst:
 
-                    image = src_dst.tile(
-                        x, y, z, tilesize=scale * 256, nodata=src_dst.input.rio.nodata
-                    )
-
-                if post_process:
-                    image = post_process(image)
-
-                if rescale:
-                    image.rescale(rescale)
-
-                if color_formula:
-                    image.apply_color_formula(color_formula)
-
-                content, media_type = render_image(
-                    image,
-                    output_format=format,
-                    colormap=colormap,
-                    **render_params,
+                image = src_dst.tile(
+                    x, y, z, tilesize=scale * 256, nodata=src_dst.input.rio.nodata
                 )
 
-                return Response(content, media_type=media_type)
-            except zarr.errors.GroupNotFoundError as e:
-                raise HTTPException(
-                    status_code=422, detail=f"{e.__class__}: {e}"
-                ) from e
+            if post_process:
+                image = post_process(image)
+
+            if rescale:
+                image.rescale(rescale)
+
+            if color_formula:
+                image.apply_color_formula(color_formula)
+
+            content, media_type = render_image(
+                image,
+                output_format=format,
+                colormap=colormap,
+                **render_params,
+            )
+
+            return Response(content, media_type=media_type)
 
         @self.router.get(
             "/tilejson.json",
