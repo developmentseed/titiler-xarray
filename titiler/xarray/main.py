@@ -4,7 +4,9 @@ import logging
 
 import rioxarray
 import xarray
+import zarr
 from fastapi import FastAPI
+from starlette import status
 from starlette.middleware.cors import CORSMiddleware
 from starlette_cramjam.middleware import CompressionMiddleware
 
@@ -49,6 +51,10 @@ app.include_router(tms.router, tags=["Tiling Schemes"])
 algorithms = AlgorithmFactory()
 app.include_router(algorithms.router, tags=["Algorithms"])
 
+error_codes = {
+    zarr.errors.GroupNotFoundError: status.HTTP_422_UNPROCESSABLE_ENTITY,
+}
+add_exception_handlers(app, error_codes)
 add_exception_handlers(app, DEFAULT_STATUS_CODES)
 
 # Set all CORS enabled origins
