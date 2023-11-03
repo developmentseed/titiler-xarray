@@ -60,6 +60,7 @@ def get_reference_args(src_path: str, protocol: str, anon: Optional[bool]) -> Di
 def get_filesystem(
     src_path: str,
     protocol: str,
+    xr_engine: str,
     enable_fsspec_cache: bool,
     reference: Optional[bool],
     anon: Optional[bool],
@@ -73,7 +74,11 @@ def get_filesystem(
             if enable_fsspec_cache
             else s3fs.S3FileSystem()
         )
-        return s3fs.S3Map(root=src_path, s3=s3_filesystem)
+        return (
+            s3_filesystem.open(src_path)
+            if xr_engine == "h5netcdf"
+            else s3fs.S3Map(root=src_path, s3=s3_filesystem)
+        )
     elif reference:
         reference_args = get_reference_args(src_path, protocol, anon)
         return (
@@ -118,7 +123,7 @@ def xarray_open_dataset(
     protocol = parse_protocol(src_path, reference=reference)
     xr_engine = xarray_engine(src_path)
     file_handler = get_filesystem(
-        src_path, protocol, api_settings.enable_fsspec_cache, reference, anon
+        src_path, protocol, xr_engine, api_settings.enable_fsspec_cache, reference, anon
     )
 
     # Arguments for xarray.open_dataset
@@ -258,7 +263,7 @@ class ZarrReader(XarrayReader):
                 reference=self.reference,
                 consolidated=self.consolidated,
                 anon=self.anon,
-            ),
+            )
         )
         self.input = get_variable(
             self.ds,

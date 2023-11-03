@@ -251,7 +251,6 @@ class ZarrTilerFactory(BaseTilerFactory):
                 consolidated=consolidated,
                 anon=anon,
             ) as src_dst:
-
                 image = src_dst.tile(
                     x, y, z, tilesize=scale * 256, nodata=src_dst.input.rio.nodata
                 )
