@@ -181,11 +181,11 @@ def get_variable(
 ) -> xarray.DataArray:
     """Get Xarray variable as DataArray."""
     da = ds[variable]
-    da = arrange_coordinates(da)
     # TODO: add test
     if drop_dim:
         dim_to_drop, dim_val = drop_dim.split("=")
         da = da.sel({dim_to_drop: dim_val}).drop(dim_to_drop)
+    da = arrange_coordinates(da)
 
     if (da.x > 180).any():
         # Adjust the longitude coordinates to the -180 to 180 range

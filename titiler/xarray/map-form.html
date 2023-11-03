@@ -75,6 +75,10 @@
                 background-color: #0056b3;
             }
 
+            #other-fields-list li {
+                margin-bottom: 0.5em;
+            }
+
             /* histogram container */
             #histogram-container {
                 margin-top: 20px;
@@ -123,17 +127,23 @@
                 <input type="text" id="url-input" placeholder="Enter URL">
                 <br />
                 <h4>Step 2: Define other fields to use when opening the URL with xarray</h4>
-                <input type="checkbox" id="reference" name="reference">
-                <label for="reference">Is this URL for a reference file (i.e. <a href="https://fsspec.github.io/kerchunk">kerchunk</a>)?:</label>
-                <br />
-                <br />
-                <input type="checkbox" id="consolidated" name="consolidated" checked>
-                <label for="consolidated">Does this Zarr store have consolidated metadata? (default should be to have consolidated metadata, learn more in the: <a href="https://zarr.readthedocs.io/en/stable/tutorial.html#consolidating-metadata">Zarr docs</a>).</label>
-                <br />
-                <br />
-                <input type="text" id="group-input" placeholder="OPTIONAL: Group">
-                <span><i><br />If the URL is for a zarr hierarchy or HDF5, please specify the group to use when opening the dataset.</i></span>
-                <br />
+                <ul style="list-style-type: none" id="other-fields-list">
+                    <li>
+                        <input type="checkbox" id="reference" name="reference">
+                        <label for="reference">Is this URL for a reference file (i.e. <a href="https://fsspec.github.io/kerchunk">kerchunk</a>)?:</label>
+                    </li>
+                    <li>
+                        <input type="checkbox" id="consolidated" name="consolidated" checked>
+                        <label for="consolidated">Does this Zarr store have consolidated metadata? (default should be to have consolidated metadata, learn more in the: <a href="https://zarr.readthedocs.io/en/stable/tutorial.html#consolidating-metadata">Zarr docs</a>).</label>
+                    </li>
+                    <li>
+                        <input type="text" id="group-input" placeholder="OPTIONAL: Group">
+                        <span><i><br />If the URL is for a zarr hierarchy or HDF5, please specify the group to use when opening the dataset.</i></span>
+                    </li>
+                    <li>
+                        <span>If there are additional parameters you need to set, please visit the <a href="/api.html#/Xarray%20Tiler%20API/map_viewer_map_get">api docs</a>.</span>
+                    </li>
+                </ul>
                 <br />
 
                 <!-- Variable input -->

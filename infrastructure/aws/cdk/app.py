@@ -8,6 +8,7 @@ from aws_cdk import App, CfnOutput, Duration, Stack, Tags
 from aws_cdk import aws_apigatewayv2_alpha as apigw
 from aws_cdk import aws_cloudwatch as cloudwatch
 from aws_cdk import aws_cloudwatch_actions as cloudwatch_actions
+from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_efs as efs
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda
@@ -56,10 +57,30 @@ class LambdaStack(Stack):
         permissions = permissions or []
         environment = environment or {}
 
+        vpc = ec2.Vpc(
+            self,
+            "titiler-xarray-vpc",
+            max_azs=2,  # Default is all AZs in the region
+            nat_gateways=1,
+            cidr="10.0.0.0/16",
+            # Define custom CIDR range for each subnet type
+            subnet_configuration=[
+                ec2.SubnetConfiguration(
+                    name="Public", subnet_type=ec2.SubnetType.PUBLIC, cidr_mask=24
+                ),
+                ec2.SubnetConfiguration(
+                    name="Private",
+                    subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT,
+                    cidr_mask=24,
+                ),
+            ],
+        )
+
         # Create and attach a file system
         file_system = efs.FileSystem(
             self,
             "EfsFileSystem",
+            vpc=vpc,
             lifecycle_policy=efs.LifecyclePolicy.AFTER_7_DAYS,  # Or choose another policy
             performance_mode=efs.PerformanceMode.GENERAL_PURPOSE,
         )
@@ -90,6 +111,7 @@ class LambdaStack(Stack):
             environment={**DEFAULT_ENV, **environment},
             log_retention=logs.RetentionDays.ONE_WEEK,
             ephemeral_storage_size=aws_cdk.Size.gibibytes(10),
+            vpc=vpc,
             filesystem=aws_lambda.FileSystem.from_efs_access_point(
                 access_point, "/mnt/efs"
             ),  # Mounting it to /mnt/efs in Lambda
