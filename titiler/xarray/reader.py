@@ -15,7 +15,6 @@ from rio_tiler.constants import WEB_MERCATOR_TMS, WGS84_CRS
 from rio_tiler.io.xarray import XarrayReader
 from rio_tiler.types import BBox
 
-import diskcache as dc
 from titiler.xarray.settings import ApiSettings
 
 api_settings = ApiSettings()
@@ -26,12 +25,13 @@ def parse_protocol(src_path: str, reference: Optional[bool] = False) -> str:
     Parse the protocol from the source path.
     """
     if reference:
-        return "reference"    
-    match = re.match(r"^(s3|https|http)", src_path)    
+        return "reference"
+    match = re.match(r"^(s3|https|http)", src_path)
     if match:
         return match.group(0)
     else:
         return "file"
+
 
 def get_cache_args(protocol: str) -> Dict[str, Any]:
     """
@@ -44,13 +44,16 @@ def get_cache_args(protocol: str) -> Dict[str, Any]:
     }
 
 
-def get_reference_args(src_path: str, protocol: str, anon: Optional[bool]) -> Dict[str, Any]:
+def get_reference_args(src_path: str, protocol: str, anon: Optional[bool]) -> Dict:
     """
     Get the reference arguments for the given source path.
     """
-    base_args = {"fo": src_path, "remote_options": {"anon": anon}}
+    base_args = {"remote_options": {"anon": anon}}
     if api_settings.enable_fsspec_cache:
+        base_args["target_options"] = {"fo": src_path}  # type: ignore
         base_args.update(get_cache_args(protocol))
+    else:
+        base_args["fo"] = src_path  # type: ignore
     return base_args
 
 
@@ -73,18 +76,21 @@ def get_filesystem(
         return s3fs.S3Map(root=src_path, s3=s3_filesystem)
     elif reference:
         reference_args = get_reference_args(src_path, protocol, anon)
-        return fsspec.filesystem("reference", **reference_args).get_mapper("")    
-    elif protocol in ["https", "http"]:
-        fs = fsspec.filesystem(protocol)
         return (
-            fs.open(
-                src_path, fs=fsspec.filesystem("filecache", **get_cache_args(protocol))
-            )
+            fsspec.filesystem("filecache", **reference_args).get_mapper("")
             if enable_fsspec_cache
-            else fs.open(src_path)
+            else fsspec.filesystem("reference", **reference_args).get_mapper("")
         )
+    elif protocol in ["https", "http"]:
+        http_filesystem = (
+            fsspec.filesystem("filecache", **get_cache_args(protocol))
+            if enable_fsspec_cache
+            else fsspec.filesystem(protocol)
+        )
+        return http_filesystem.open(src_path)
     else:
         return src_path
+
 
 def xarray_engine(src_path: str):
     """
@@ -121,6 +127,7 @@ def xarray_open_dataset(
         "decode_coords": "all",
         "decode_times": decode_times,
         "engine": xr_engine,
+        "cache": False,
     }
 
     # Argument if we're opening a datatree
@@ -131,7 +138,6 @@ def xarray_open_dataset(
     if xr_engine == "h5netcdf":
         xr_open_args["engine"] = "h5netcdf"
         xr_open_args["lock"] = False
-        xr_open_args["consolidated"] = False
     else:
         # Zarr arguments
         xr_open_args["engine"] = "zarr"
@@ -208,6 +214,7 @@ def get_variable(
             da = da.isel(time=0)
 
     return da
+
 
 @attr.s
 class ZarrReader(XarrayReader):

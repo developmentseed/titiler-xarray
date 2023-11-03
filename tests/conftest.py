@@ -21,11 +21,11 @@ def app(monkeypatch):
 def pytest_sessionstart(session):
     """Setup before tests run."""
     test_cache_dir = "fsspec_test_cache"
-    os.environ["FSSPEC_CACHE_DIRECTORY"] = test_cache_dir
+    os.environ["TITILER_XARRAY_FSSPEC_CACHE_DIRECTORY"] = test_cache_dir
     os.mkdir(test_cache_dir)
 
 
 def pytest_sessionfinish(session, exitstatus):
     """Cleanup step after all tests have been run."""
     print("\nAll tests are done! Cleaning up...")
-    shutil.rmtree(os.environ["FSSPEC_CACHE_DIRECTORY"])
+    shutil.rmtree(os.environ["TITILER_XARRAY_FSSPEC_CACHE_DIRECTORY"])

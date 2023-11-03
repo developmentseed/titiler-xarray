@@ -7,6 +7,7 @@ DATA_DIR = "tests/fixtures"
 test_zarr_store = os.path.join(DATA_DIR, "test_zarr_store.zarr")
 test_reference_store = os.path.join(DATA_DIR, "reference.json")
 test_netcdf_store = os.path.join(DATA_DIR, "testfile.nc")
+test_remote_netcdf_store = "https://nex-gddp-cmip6.s3-us-west-2.amazonaws.com/NEX-GDDP-CMIP6/GISS-E2-1-G/historical/r1i1p1f2/pr/pr_day_GISS-E2-1-G_historical_r1i1p1f2_gn_1950.nc"
 test_unconsolidated_store = os.path.join(DATA_DIR, "unconsolidated.zarr")
 test_pyramid_store = os.path.join(DATA_DIR, "pyramid.zarr")
 
@@ -27,6 +28,14 @@ test_reference_store_params = {
 test_netcdf_store_params = {
     "params": {"url": test_netcdf_store, "variable": "data", "decode_times": False},
     "variables": ["data"],
+}
+test_remote_netcdf_store_params = {
+    "params": {
+        "url": test_remote_netcdf_store,
+        "variable": "pr",
+        "decode_times": False,
+    },
+    "variables": ["pr"],
 }
 test_unconsolidated_store_params = {
     "params": {
@@ -71,6 +80,10 @@ def test_get_variables_reference(app):
 
 def test_get_variables_netcdf(app):
     return get_variables_test(app, test_netcdf_store_params)
+
+
+def test_get_variables_remote_netcdf(app):
+    return get_variables_test(app, test_remote_netcdf_store_params)
 
 
 def test_get_variables_unconsolidated(app):
