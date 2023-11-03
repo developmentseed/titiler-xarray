@@ -441,6 +441,10 @@ class ZarrTilerFactory(BaseTilerFactory):
                     description="Select a specific zarr group from a zarr hierarchy, can be for pyramids or datasets. Can be used to open a dataset in HDF5 files."
                 ),
             ] = None,
+            drop_dim: Annotated[
+                Optional[str],
+                Query(description="Dimension to drop"),
+            ] = None,
         ):
             with self.reader(
                 url,
@@ -448,6 +452,7 @@ class ZarrTilerFactory(BaseTilerFactory):
                 reference=reference,
                 consolidated=consolidated,
                 group=group,
+                drop_dim=drop_dim,
             ) as src_dst:
                 boolean_mask = ~np.isnan(src_dst.input)
                 data_values = src_dst.input.values[boolean_mask]
