@@ -395,6 +395,7 @@ class ZarrTilerFactory(BaseTilerFactory):
                 decode_times=decode_times,
                 tms=tms,
                 consolidated=consolidated,
+                drop_dim=drop_dim,
             ) as src_dst:
                 # see https://github.com/corteva/rioxarray/issues/645
                 minx, miny, maxx, maxy = zip(
