@@ -29,7 +29,6 @@ RUN rm -rdf /asset/botocore*
 RUN rm -rdf /asset/pyyaml*
 RUN rm -rdf /asset/partd*
 RUN rm -rdf /asset/MarkupSafe*
-RUN rm -rdf /asset/pytz*
 RUN rm -rdf /asset/zipp*
 RUN rm -rdf /asset/jmespath*
 RUN rm -rdf /asset/idna*
