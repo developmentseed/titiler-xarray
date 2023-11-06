@@ -28,7 +28,6 @@ dependencies = [
     "cftime",
     "dask",
     "h5netcdf",
-    "h5pyd",
     "xarray",
     "rioxarray",
     "zarr",
