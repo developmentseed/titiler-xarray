@@ -4,9 +4,10 @@ import logging
 
 from mangum import Mangum
 
-import sys
-sys.path.append('/mnt/efs/libraries')
-print(sys.path)
+import os
+directory = '/mnt/efs/libraries'
+contents = os.listdir(directory)
+print(contents)
 from titiler.xarray.main import app
 
 logging.getLogger("mangum.lifespan").setLevel(logging.ERROR)
