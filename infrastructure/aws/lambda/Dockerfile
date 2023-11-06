@@ -26,7 +26,6 @@ RUN find /asset -type d -a -name 'tests' -print0 | xargs -0 rm -rf
 RUN rm -rdf /asset/numpy/doc/ /asset/bin /asset/geos_license /asset/Misc
 RUN rm -rdf /asset/boto3*
 RUN rm -rdf /asset/botocore*
-RUN rm -rdf /asset/click*
 RUN rm -rdf /asset/pyyaml*
 RUN rm -rdf /asset/partd*
 RUN rm -rdf /asset/MarkupSafe*
