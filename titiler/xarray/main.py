@@ -4,6 +4,7 @@ import logging
 import os
 import shutil
 import sys
+sys.path.appned('/mnt/efs/libraries')
 
 import rioxarray
 import zarr
