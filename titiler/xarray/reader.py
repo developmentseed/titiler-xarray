@@ -133,7 +133,7 @@ def xarray_open_dataset(
         "decode_times": decode_times,
         "engine": xr_engine,
         "cache": False,
-        "chunks": {}, # loads the dataset with dask using engine preferred chunks if exposed by the backend
+        "chunks": {},  # loads the dataset with dask using engine preferred chunks if exposed by the backend
     }
 
     # Argument if we're opening a datatree
