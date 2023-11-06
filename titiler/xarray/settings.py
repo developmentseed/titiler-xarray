@@ -15,6 +15,7 @@ class ApiSettings(BaseSettings):
     root_path: str = ""
     debug: bool = False
     fsspec_cache_directory: str = "/mnt/efs"
+    # append_python_path: str = None
 
     model_config = SettingsConfigDict(env_prefix="TITILER_XARRAY_", env_file=".env")
 

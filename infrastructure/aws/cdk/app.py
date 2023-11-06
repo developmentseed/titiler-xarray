@@ -32,6 +32,7 @@ DEFAULT_ENV = {
     "PYTHONWARNINGS": "ignore",
     "VSI_CACHE": "TRUE",
     "VSI_CACHE_SIZE": "5000000",  # 5 MB (per file-handle)
+    # "TITILER_XARRAY_APPEND_PYTHON_PATH": "/mnt/efs/libraries"
 }
 
 
