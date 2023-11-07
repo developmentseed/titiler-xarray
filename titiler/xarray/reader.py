@@ -37,10 +37,7 @@ def get_cache_args(protocol: str) -> Dict[str, Any]:
     """
     Get the cache arguments for the given protocol.
     """
-    if protocol == "s3":
-        directory = f"{api_settings.fsspec_cache_directory}/blockcache"
-    else:
-        directory = f"{api_settings.fsspec_cache_directory}/filecache"
+    directory = f"{api_settings.fsspec_cache_directory}/filecache"
 
     return {
         "target_protocol": protocol,
@@ -75,7 +72,7 @@ def get_filesystem(
     """
     if protocol == "s3":
         s3_filesystem = (
-            fsspec.filesystem("blockcache", **get_cache_args(protocol))
+            fsspec.filesystem("filecache", **get_cache_args(protocol))
             if enable_fsspec_cache
             else s3fs.S3FileSystem()
         )
@@ -137,6 +134,7 @@ def xarray_open_dataset(
         "decode_coords": "all",
         "decode_times": decode_times,
         "engine": xr_engine,
+        "chunks": 'auto'
     }
 
     # Argument if we're opening a datatree
@@ -155,7 +153,6 @@ def xarray_open_dataset(
     if reference:
         xr_open_args["consolidated"] = False
         xr_open_args["backend_kwargs"] = {"consolidated": False}
-
     ds = xarray.open_dataset(file_handler, **xr_open_args)
     return ds
 
@@ -261,8 +258,7 @@ class ZarrReader(XarrayReader):
     def __attrs_post_init__(self):
         """Set bounds and CRS."""
         self.ds = self._ctx_stack.enter_context(
-            xarray_open_dataset(
-                self.src_path,
+            xarray_open_dataset(self.src_path,
                 group=self.group,
                 reference=self.reference,
                 consolidated=self.consolidated,
