@@ -37,9 +37,14 @@ def get_cache_args(protocol: str) -> Dict[str, Any]:
     """
     Get the cache arguments for the given protocol.
     """
+    if protocol == "s3":
+        directory = f"{api_settings.fsspec_cache_directory}/blockcache"
+    else:
+        directory = f"{api_settings.fsspec_cache_directory}/filecache"
+
     return {
         "target_protocol": protocol,
-        "cache_storage": api_settings.fsspec_cache_directory,
+        "cache_storage": directory,
         "remote_options": {"anon": True},
     }
 
@@ -70,7 +75,7 @@ def get_filesystem(
     """
     if protocol == "s3":
         s3_filesystem = (
-            fsspec.filesystem("filecache", **get_cache_args(protocol))
+            fsspec.filesystem("blockcache", **get_cache_args(protocol))
             if enable_fsspec_cache
             else s3fs.S3FileSystem()
         )
@@ -132,8 +137,6 @@ def xarray_open_dataset(
         "decode_coords": "all",
         "decode_times": decode_times,
         "engine": xr_engine,
-        "cache": False,
-        "chunks": {},  # loads the dataset with dask using engine preferred chunks if exposed by the backend
     }
 
     # Argument if we're opening a datatree
