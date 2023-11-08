@@ -255,7 +255,6 @@ class ZarrTilerFactory(BaseTilerFactory):
                     x, y, z, tilesize=scale * 256, nodata=src_dst.input.rio.nodata
                 )
 
-
             if post_process:
                 image = post_process(image)
 

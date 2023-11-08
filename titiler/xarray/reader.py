@@ -75,7 +75,7 @@ def get_filesystem(
             else s3fs.S3FileSystem()
         )
         return (
-            s3_filesystem.open(src_path, mode='rb')
+            s3_filesystem.open(src_path, mode="rb")
             if xr_engine == "h5netcdf"
             else s3fs.S3Map(root=src_path, s3=s3_filesystem)
         )
@@ -132,7 +132,7 @@ def xarray_open_dataset(
         "decode_coords": "all",
         "decode_times": decode_times,
         "engine": xr_engine,
-        "cache": False
+        "cache": False,
     }
 
     # Argument if we're opening a datatree
@@ -253,7 +253,8 @@ class ZarrReader(XarrayReader):
     def __attrs_post_init__(self):
         """Set bounds and CRS."""
         self.ds = self._ctx_stack.enter_context(
-            xarray_open_dataset(self.src_path,
+            xarray_open_dataset(
+                self.src_path,
                 group=self.group,
                 reference=self.reference,
                 consolidated=self.consolidated,
