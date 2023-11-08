@@ -37,11 +37,9 @@ def get_cache_args(protocol: str) -> Dict[str, Any]:
     """
     Get the cache arguments for the given protocol.
     """
-    directory = f"{api_settings.fsspec_cache_directory}/filecache"
-
     return {
         "target_protocol": protocol,
-        "cache_storage": directory,
+        "cache_storage": api_settings.fsspec_cache_directory,
         "remote_options": {"anon": True},
     }
 
@@ -77,7 +75,7 @@ def get_filesystem(
             else s3fs.S3FileSystem()
         )
         return (
-            s3_filesystem.open(src_path)
+            s3_filesystem.open(src_path, mode='rb')
             if xr_engine == "h5netcdf"
             else s3fs.S3Map(root=src_path, s3=s3_filesystem)
         )
@@ -134,7 +132,7 @@ def xarray_open_dataset(
         "decode_coords": "all",
         "decode_times": decode_times,
         "engine": xr_engine,
-        "chunks": 'auto'
+        "cache": False
     }
 
     # Argument if we're opening a datatree
@@ -172,10 +170,7 @@ def arrange_coordinates(da: xarray.DataArray) -> xarray.DataArray:
         if "longitude" in da.dims:
             longitude_var_name = "longitude"
         da = da.rename({latitude_var_name: "y", longitude_var_name: "x"})
-    if "time" in da.dims:
-        da = da.transpose("time", "y", "x")
-    else:
-        da = da.transpose("y", "x")
+    da = da.transpose("time", "y", "x", missing_dims="ignore")
     return da
 
 
@@ -186,6 +181,7 @@ def get_variable(
     drop_dim: Optional[str] = None,
 ) -> xarray.DataArray:
     """Get Xarray variable as DataArray."""
+
     da = ds[variable]
     # TODO: add test
     if drop_dim:
@@ -218,7 +214,6 @@ def get_variable(
             )
         else:
             da = da.isel(time=0)
-
     return da
 
 
