@@ -26,6 +26,7 @@ classifiers = [
 dynamic = ["version"]
 dependencies = [
     "cftime",
+    "dask",
     "h5netcdf",
     "xarray",
     "rioxarray",
