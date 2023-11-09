@@ -33,13 +33,13 @@ def parse_protocol(src_path: str, reference: Optional[bool] = False) -> str:
         return "file"
 
 
-def get_cache_args(protocol: str) -> Dict[str, Any]:
+def get_cache_args(protocol: str, cache_type: str) -> Dict[str, Any]:
     """
     Get the cache arguments for the given protocol.
     """
     return {
         "target_protocol": protocol,
-        "cache_storage": api_settings.fsspec_cache_directory,
+        "cache_storage": f"{api_settings.fsspec_cache_directory}-{cache_type}",
         "remote_options": {"anon": True},
     }
 
@@ -51,7 +51,7 @@ def get_reference_args(src_path: str, protocol: str, anon: Optional[bool]) -> Di
     base_args = {"remote_options": {"anon": anon}}
     if api_settings.enable_fsspec_cache:
         base_args["target_options"] = {"fo": src_path}  # type: ignore
-        base_args.update(get_cache_args(protocol))
+        base_args.update(get_cache_args(protocol, cache_type="filecache"))
     else:
         base_args["fo"] = src_path  # type: ignore
     return base_args
@@ -68,40 +68,39 @@ def get_filesystem(
     """
     Get the filesystem for the given source path.
     """
+    cache_type = (
+        "blockcache" if xr_engine == "h5netcdf" else "filecache"
+    )
     if protocol == "s3":
         s3_filesystem = (
-            fsspec.filesystem("filecache", **get_cache_args(protocol))
+            fsspec.filesystem(cache_type, **get_cache_args(protocol, cache_type))
             if enable_fsspec_cache
             else s3fs.S3FileSystem()
         )
         return (
-            s3_filesystem.open(src_path, mode="rb")
+            s3_filesystem.open(src_path)
             if xr_engine == "h5netcdf"
             else s3fs.S3Map(root=src_path, s3=s3_filesystem)
         )
     elif reference:
         reference_args = get_reference_args(src_path, protocol, anon)
         return (
-            fsspec.filesystem("filecache", **reference_args).get_mapper("")
+            fsspec.filesystem(cache_type, **reference_args).get_mapper("")
             if enable_fsspec_cache
             else fsspec.filesystem("reference", **reference_args).get_mapper("")
         )
-    elif protocol in ["https", "http"]:
-        http_filesystem = (
-            fsspec.filesystem("filecache", **get_cache_args(protocol))
+    elif protocol in ["https", "http", "file"]:
+        filesystem = (
+            fsspec.filesystem(cache_type, **get_cache_args(protocol, cache_type))
             if enable_fsspec_cache
             else fsspec.filesystem(protocol)
         )
-        return http_filesystem.open(src_path)
+        if xr_engine == "h5netcdf":
+            return filesystem.open(src_path)
+        else:
+            return filesystem.get_mapper(src_path)
     else:
-        # TODO: In tests this is failing with IsADirectoryError: [Errno 21] Is a directory: 'fsspec_test_cache/2dd8b85c17ad82a17d403580bf19e9fb5cc9f05aaedcf8f3be8ef2431c00fbb2'
-        # local_filesystem = (
-        #     fsspec.filesystem("filecache", **get_cache_args(protocol))
-        #     if enable_fsspec_cache
-        #     else fsspec.filesystem(protocol)
-        # )
-        # return local_filesystem.open(src_path)
-        return src_path
+        raise ValueError(f"Unsupported protocol: {protocol}")
 
 
 def xarray_engine(src_path: str):
@@ -178,11 +177,6 @@ def arrange_coordinates(da: xarray.DataArray, xr_engine: str) -> xarray.DataArra
         da = da.rename({latitude_var_name: "y", longitude_var_name: "x"})
     if da.dims != ["time", "y", "x"]:
         da = da.transpose("time", "y", "x", missing_dims="ignore")
-        # if we're caching the data, we need to load the transposed data into memory rather than lazily loading it later.
-        # Trying to modify the data with rioxarray during the tile operation will result in an error:
-        # `cannot pickle io.BufferedReader`. This only happens when operating on a cached file, like NetCDF.
-        if api_settings.enable_fsspec_cache and xr_engine == "h5netcdf":
-            da.load()
     return da
 
 
