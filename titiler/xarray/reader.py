@@ -132,7 +132,7 @@ def xarray_open_dataset(
         "decode_coords": "all",
         "decode_times": decode_times,
         "engine": xr_engine,
-        "cache": False,
+        "chunks": 'auto',
     }
 
     # Argument if we're opening a datatree
