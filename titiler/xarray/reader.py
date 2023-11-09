@@ -94,6 +94,13 @@ def get_filesystem(
         )
         return http_filesystem.open(src_path)
     else:
+        # TODO: In tests this is failing with IsADirectoryError: [Errno 21] Is a directory: 'fsspec_test_cache/2dd8b85c17ad82a17d403580bf19e9fb5cc9f05aaedcf8f3be8ef2431c00fbb2'
+        # local_filesystem = (
+        #     fsspec.filesystem("filecache", **get_cache_args(protocol))
+        #     if enable_fsspec_cache
+        #     else fsspec.filesystem(protocol)
+        # )
+        # return local_filesystem.open(src_path)
         return src_path
 
 
@@ -174,9 +181,8 @@ def arrange_coordinates(da: xarray.DataArray, xr_engine: str) -> xarray.DataArra
         # if we're caching the data, we need to load the transposed data into memory rather than lazily loading it later.
         # Trying to modify the data with rioxarray during the tile operation will result in an error:
         # `cannot pickle io.BufferedReader`. This only happens when operating on a cached file, like NetCDF.
-        # if api_settings.enable_fsspec_cache and xr_engine == "h5netcdf":
-        #     #da.load()
-        #     pass
+        if api_settings.enable_fsspec_cache and xr_engine == "h5netcdf":
+            da.load()
     return da
 
 
