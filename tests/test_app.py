@@ -32,7 +32,11 @@ test_netcdf_store_params = {
 }
 
 test_transposed_netcdf_store_params = {
-    "params": {"url": test_transposed_netcdf_store, "variable": "precipitation", "decode_times": False},
+    "params": {
+        "url": test_transposed_netcdf_store,
+        "variable": "precipitation",
+        "decode_times": False,
+    },
     "variables": ["precipitation"],
 }
 
@@ -169,7 +173,7 @@ def test_get_tilejson_pyramid(app):
 
 def get_tile_test(app, ds_params, zoom: int = 0):
     response = app.get(
-        f"/tiles/0/0/0.png",
+        "/tiles/0/0/0.png",
         params=ds_params["params"],
     )
     assert response.status_code == 200
@@ -191,6 +195,7 @@ def test_get_tile_reference(app):
 
 def test_get_tile_netcdf(app):
     return get_tile_test(app, test_netcdf_store_params)
+
 
 def test_get_tile_transposed_netcdf(app):
     return get_tile_test(app, test_transposed_netcdf_store_params)

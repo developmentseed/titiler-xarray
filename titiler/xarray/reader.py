@@ -138,7 +138,7 @@ def xarray_open_dataset(
     xr_open_args: Dict[str, Any] = {
         "decode_coords": "all",
         "decode_times": decode_times,
-        "engine": xr_engine
+        "engine": xr_engine,
     }
 
     # Argument if we're opening a datatree
