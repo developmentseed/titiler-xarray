@@ -6,7 +6,7 @@ from helpers import find_string_in_stream
 DATA_DIR = "tests/fixtures"
 test_zarr_store = os.path.join(DATA_DIR, "test_zarr_store.zarr")
 test_reference_store = os.path.join(DATA_DIR, "reference.json")
-test_netcdf_store = os.path.join(DATA_DIR, "testfile.nc")
+test_netcdf_store = os.path.join(DATA_DIR, "3B42_Daily.19980101.7.nc4")
 test_remote_netcdf_store = "https://nex-gddp-cmip6.s3-us-west-2.amazonaws.com/NEX-GDDP-CMIP6/GISS-E2-1-G/historical/r1i1p1f2/pr/pr_day_GISS-E2-1-G_historical_r1i1p1f2_gn_1950.nc"
 test_unconsolidated_store = os.path.join(DATA_DIR, "unconsolidated.zarr")
 test_pyramid_store = os.path.join(DATA_DIR, "pyramid.zarr")
@@ -26,8 +26,8 @@ test_reference_store_params = {
     "variables": ["value"],
 }
 test_netcdf_store_params = {
-    "params": {"url": test_netcdf_store, "variable": "data", "decode_times": False},
-    "variables": ["data"],
+    "params": {"url": test_netcdf_store, "variable": "precipitation", "decode_times": False},
+    "variables": ["precipitation"],
 }
 test_remote_netcdf_store_params = {
     "params": {
@@ -162,7 +162,7 @@ def test_get_tilejson_pyramid(app):
 
 def get_tile_test(app, ds_params, zoom: int = 0):
     response = app.get(
-        f"/tiles/{zoom}/0/0.png",
+        f"/tiles/1/0/0.png",
         params=ds_params["params"],
     )
     assert response.status_code == 200

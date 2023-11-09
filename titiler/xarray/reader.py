@@ -131,8 +131,7 @@ def xarray_open_dataset(
     xr_open_args: Dict[str, Any] = {
         "decode_coords": "all",
         "decode_times": decode_times,
-        "engine": xr_engine,
-        "chunks": 'auto',
+        "engine": xr_engine
     }
 
     # Argument if we're opening a datatree
@@ -155,7 +154,7 @@ def xarray_open_dataset(
     return ds
 
 
-def arrange_coordinates(da: xarray.DataArray) -> xarray.DataArray:
+def arrange_coordinates(da: xarray.DataArray, xr_engine: str) -> xarray.DataArray:
     """
     Arrange coordinates to DataArray.
     An rioxarray.exceptions.InvalidDimensionOrder error is raised if the coordinates are not in the correct order time, y, and x.
@@ -170,13 +169,21 @@ def arrange_coordinates(da: xarray.DataArray) -> xarray.DataArray:
         if "longitude" in da.dims:
             longitude_var_name = "longitude"
         da = da.rename({latitude_var_name: "y", longitude_var_name: "x"})
-    da = da.transpose("time", "y", "x", missing_dims="ignore")
+    if da.dims != ["time", "y", "x"]:
+        da = da.transpose("time", "y", "x", missing_dims="ignore")
+        # if we're caching the data, we need to load the transposed data into memory rather than lazily loading it later.
+        # Trying to modify the data with rioxarray during the tile operation will result in an error:
+        # `cannot pickle io.BufferedReader`. This only happens when operating on a cached file, like NetCDF.
+        # if api_settings.enable_fsspec_cache and xr_engine == "h5netcdf":
+        #     #da.load()
+        #     pass
     return da
 
 
 def get_variable(
     ds: xarray.Dataset,
     variable: str,
+    xr_engine: str,
     time_slice: Optional[str] = None,
     drop_dim: Optional[str] = None,
 ) -> xarray.DataArray:
@@ -187,7 +194,7 @@ def get_variable(
     if drop_dim:
         dim_to_drop, dim_val = drop_dim.split("=")
         da = da.sel({dim_to_drop: dim_val}).drop(dim_to_drop)
-    da = arrange_coordinates(da)
+    da = arrange_coordinates(da, xr_engine=xr_engine)
 
     if (da.x > 180).any():
         # Adjust the longitude coordinates to the -180 to 180 range
@@ -264,6 +271,7 @@ class ZarrReader(XarrayReader):
         self.input = get_variable(
             self.ds,
             self.variable,
+            xr_engine=xarray_engine(self.src_path),
             time_slice=self.time_slice,
             drop_dim=self.drop_dim,
         )
