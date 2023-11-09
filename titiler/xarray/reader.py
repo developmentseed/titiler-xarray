@@ -39,7 +39,7 @@ def get_cache_args(protocol: str, cache_type: str) -> Dict[str, Any]:
     """
     return {
         "target_protocol": protocol,
-        "cache_storage": f"{api_settings.fsspec_cache_directory}-{cache_type}",
+        "cache_storage": f"{api_settings.fsspec_cache_directory}/fsspec-{cache_type}",
         "remote_options": {"anon": True},
     }
 

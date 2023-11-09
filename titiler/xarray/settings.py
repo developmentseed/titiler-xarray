@@ -14,7 +14,7 @@ class ApiSettings(BaseSettings):
     enable_fsspec_cache: bool = True
     root_path: str = ""
     debug: bool = False
-    fsspec_cache_directory: str = "/mnt/efs/fsspsec_cache"
+    fsspec_cache_directory: str = "/mnt/efs"
 
     model_config = SettingsConfigDict(env_prefix="TITILER_XARRAY_", env_file=".env")
 
