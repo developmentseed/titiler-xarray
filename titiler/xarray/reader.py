@@ -68,9 +68,7 @@ def get_filesystem(
     """
     Get the filesystem for the given source path.
     """
-    cache_type = (
-        "blockcache" if xr_engine == "h5netcdf" else "filecache"
-    )
+    cache_type = "blockcache" if xr_engine == "h5netcdf" else "filecache"
     if protocol == "s3":
         s3_filesystem = (
             fsspec.filesystem(cache_type, **get_cache_args(protocol, cache_type))
