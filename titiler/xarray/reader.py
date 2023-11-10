@@ -68,7 +68,7 @@ def get_filesystem(
     """
     Get the filesystem for the given source path.
     """
-    cache_type = "blockcache" if xr_engine == "h5netcdf" else "filecache"
+    cache_type = "filecache"  # make room for using blockcache if we so desire
     if protocol == "s3":
         s3_filesystem = (
             fsspec.filesystem(cache_type, **get_cache_args(protocol, cache_type))
@@ -175,6 +175,9 @@ def arrange_coordinates(da: xarray.DataArray, xr_engine: str) -> xarray.DataArra
         da = da.rename({latitude_var_name: "y", longitude_var_name: "x"})
     if da.dims != ["time", "y", "x"]:
         da = da.transpose("time", "y", "x", missing_dims="ignore")
+        # Temporary fix for https://github.com/corteva/rioxarray/issues/711
+        if xr_engine == "h5netcdf" and api_settings.enable_fsspec_cache:
+            da.load()
     return da
 
 
