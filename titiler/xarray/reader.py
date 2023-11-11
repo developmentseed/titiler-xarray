@@ -18,7 +18,7 @@ from rio_tiler.types import BBox
 from titiler.xarray.settings import ApiSettings
 
 api_settings = ApiSettings()
-DEFAULT_CACHE_TYPE = "blockcache"
+DEFAULT_CACHE_TYPE = "filecache"
 
 
 def parse_protocol(src_path: str, reference: Optional[bool] = False) -> str:
