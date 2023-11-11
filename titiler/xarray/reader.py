@@ -18,7 +18,7 @@ from rio_tiler.types import BBox
 from titiler.xarray.settings import ApiSettings
 
 api_settings = ApiSettings()
-DEFAULT_CACHE_TYPE = "filecache"
+DEFAULT_CACHE_TYPE = "blockcache"
 
 
 def parse_protocol(src_path: str, reference: Optional[bool] = False) -> str:
@@ -54,7 +54,7 @@ def get_reference_args(src_path: str, protocol: str, anon: Optional[bool]) -> Di
     base_args = {"remote_options": {"anon": anon}}
     if api_settings.enable_fsspec_cache:
         base_args["target_options"] = {"fo": src_path}  # type: ignore
-        base_args.update(get_cache_args(protocol, cache_type="filecache"))
+        base_args.update(get_cache_args(protocol, cache_type="blockcache"))
     else:
         base_args["fo"] = src_path  # type: ignore
     return base_args
