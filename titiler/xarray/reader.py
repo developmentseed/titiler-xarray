@@ -18,7 +18,7 @@ from rio_tiler.types import BBox
 from titiler.xarray.settings import ApiSettings
 
 api_settings = ApiSettings()
-
+DEFAULT_CACHE_TYPE = 'blockcache'
 
 def parse_protocol(src_path: str, reference: Optional[bool] = False) -> str:
     """
@@ -33,7 +33,7 @@ def parse_protocol(src_path: str, reference: Optional[bool] = False) -> str:
         return "file"
 
 
-def get_cache_args(protocol: str, cache_type: str) -> Dict[str, Any]:
+def get_cache_args(protocol: str, cache_type: str = DEFAULT_CACHE_TYPE) -> Dict[str, Any]:
     """
     Get the cache arguments for the given protocol.
     """
@@ -68,10 +68,9 @@ def get_filesystem(
     """
     Get the filesystem for the given source path.
     """
-    cache_type = "filecache"  # make room for using blockcache if we so desire
     if protocol == "s3":
         s3_filesystem = (
-            fsspec.filesystem(cache_type, **get_cache_args(protocol, cache_type))
+            fsspec.filesystem(DEFAULT_CACHE_TYPE, **get_cache_args(protocol))
             if enable_fsspec_cache
             else s3fs.S3FileSystem()
         )
@@ -83,13 +82,16 @@ def get_filesystem(
     elif reference:
         reference_args = get_reference_args(src_path, protocol, anon)
         return (
-            fsspec.filesystem(cache_type, **reference_args).get_mapper("")
+            # using blockcache returns '_io.BytesIO' object has no attribute 'blocksize'
+            fsspec.filesystem("filecache", **reference_args).get_mapper("")
             if enable_fsspec_cache
             else fsspec.filesystem("reference", **reference_args).get_mapper("")
         )
     elif protocol in ["https", "http", "file"]:
+        # using blockcache with local files returns "AttributeError: 'list' object has no attribute 'update'"
+        cache_type = "filecache" if protocol == "file" else "blockcache"
         filesystem = (
-            fsspec.filesystem(cache_type, **get_cache_args(protocol, cache_type))
+            fsspec.filesystem(cache_type, **get_cache_args(protocol, cache_type=cache_type))
             if enable_fsspec_cache
             else fsspec.filesystem(protocol)
         )
@@ -158,7 +160,7 @@ def xarray_open_dataset(
     return ds
 
 
-def arrange_coordinates(da: xarray.DataArray, xr_engine: str) -> xarray.DataArray:
+def arrange_coordinates(da: xarray.DataArray) -> xarray.DataArray:
     """
     Arrange coordinates to DataArray.
     An rioxarray.exceptions.InvalidDimensionOrder error is raised if the coordinates are not in the correct order time, y, and x.
@@ -173,11 +175,6 @@ def arrange_coordinates(da: xarray.DataArray, xr_engine: str) -> xarray.DataArra
         if "longitude" in da.dims:
             longitude_var_name = "longitude"
         da = da.rename({latitude_var_name: "y", longitude_var_name: "x"})
-    if da.dims != ["time", "y", "x"]:
-        da = da.transpose("time", "y", "x", missing_dims="ignore")
-        # Temporary fix for https://github.com/corteva/rioxarray/issues/711
-        if xr_engine == "h5netcdf" and api_settings.enable_fsspec_cache:
-            da.load()
     return da
 
 
@@ -195,7 +192,7 @@ def get_variable(
     if drop_dim:
         dim_to_drop, dim_val = drop_dim.split("=")
         da = da.sel({dim_to_drop: dim_val}).drop(dim_to_drop)
-    da = arrange_coordinates(da, xr_engine=xr_engine)
+    da = arrange_coordinates(da)
 
     if (da.x > 180).any():
         # Adjust the longitude coordinates to the -180 to 180 range

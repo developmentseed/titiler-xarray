@@ -197,8 +197,13 @@ def test_get_tile_netcdf(app):
     return get_tile_test(app, test_netcdf_store_params)
 
 
-def test_get_tile_transposed_netcdf(app):
-    return get_tile_test(app, test_transposed_netcdf_store_params)
+def test_get_tile_transposed_netcdf_error(app):
+    response = app.get(
+        "/tiles/0/0/0.png",
+        params=test_transposed_netcdf_store_params["params"],
+    )
+    assert response.status_code == 422
+    assert response.json() == {"detail": "Invalid dimension order. Expected order: ('y', 'x'). You can use `DataArray.transpose('y', 'x')` to reorder your dimensions. Data variable: precipitation"}
 
 
 def test_get_tile_unconsolidated(app):

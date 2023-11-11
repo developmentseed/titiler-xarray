@@ -54,6 +54,7 @@ app.include_router(algorithms.router, tags=["Algorithms"])
 
 error_codes = {
     zarr.errors.GroupNotFoundError: status.HTTP_422_UNPROCESSABLE_ENTITY,
+    rioxarray.exceptions.InvalidDimensionOrder: status.HTTP_422_UNPROCESSABLE_ENTITY,
 }
 add_exception_handlers(app, error_codes)
 add_exception_handlers(app, DEFAULT_STATUS_CODES)
