@@ -203,7 +203,9 @@ def test_get_tile_transposed_netcdf_error(app):
         params=test_transposed_netcdf_store_params["params"],
     )
     assert response.status_code == 422
-    assert response.json() == {"detail": "Invalid dimension order. Expected order: ('y', 'x'). You can use `DataArray.transpose('y', 'x')` to reorder your dimensions. Data variable: precipitation"}
+    assert response.json() == {
+        "detail": "Invalid dimension order. Expected order: ('y', 'x'). You can use `DataArray.transpose('y', 'x')` to reorder your dimensions. Data variable: precipitation"
+    }
 
 
 def test_get_tile_unconsolidated(app):

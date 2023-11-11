@@ -18,7 +18,8 @@ from rio_tiler.types import BBox
 from titiler.xarray.settings import ApiSettings
 
 api_settings = ApiSettings()
-DEFAULT_CACHE_TYPE = 'blockcache'
+DEFAULT_CACHE_TYPE = "blockcache"
+
 
 def parse_protocol(src_path: str, reference: Optional[bool] = False) -> str:
     """
@@ -33,7 +34,9 @@ def parse_protocol(src_path: str, reference: Optional[bool] = False) -> str:
         return "file"
 
 
-def get_cache_args(protocol: str, cache_type: str = DEFAULT_CACHE_TYPE) -> Dict[str, Any]:
+def get_cache_args(
+    protocol: str, cache_type: str = DEFAULT_CACHE_TYPE
+) -> Dict[str, Any]:
     """
     Get the cache arguments for the given protocol.
     """
@@ -91,7 +94,9 @@ def get_filesystem(
         # using blockcache with local files returns "AttributeError: 'list' object has no attribute 'update'"
         cache_type = "filecache" if protocol == "file" else "blockcache"
         filesystem = (
-            fsspec.filesystem(cache_type, **get_cache_args(protocol, cache_type=cache_type))
+            fsspec.filesystem(
+                cache_type, **get_cache_args(protocol, cache_type=cache_type)
+            )
             if enable_fsspec_cache
             else fsspec.filesystem(protocol)
         )
