@@ -86,17 +86,14 @@ def get_filesystem(
         reference_args = get_reference_args(src_path, protocol, anon)
         return (
             # using blockcache returns '_io.BytesIO' object has no attribute 'blocksize'
-            fsspec.filesystem("filecache", **reference_args).get_mapper("")
+            fsspec.filesystem(DEFAULT_CACHE_TYPE, **reference_args).get_mapper("")
             if enable_fsspec_cache
             else fsspec.filesystem("reference", **reference_args).get_mapper("")
         )
     elif protocol in ["https", "http", "file"]:
         # using blockcache with local files returns "AttributeError: 'list' object has no attribute 'update'"
-        cache_type = "filecache" if protocol == "file" else "blockcache"
         filesystem = (
-            fsspec.filesystem(
-                cache_type, **get_cache_args(protocol, cache_type=cache_type)
-            )
+            fsspec.filesystem(DEFAULT_CACHE_TYPE, **get_cache_args(protocol))
             if enable_fsspec_cache
             else fsspec.filesystem(protocol)
         )
