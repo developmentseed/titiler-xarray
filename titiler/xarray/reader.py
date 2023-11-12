@@ -54,7 +54,7 @@ def get_reference_args(src_path: str, protocol: str, anon: Optional[bool]) -> Di
     base_args = {"remote_options": {"anon": anon}}
     if api_settings.enable_fsspec_cache:
         base_args["target_options"] = {"fo": src_path}  # type: ignore
-        base_args.update(get_cache_args(protocol, cache_type="blockcache"))
+        base_args.update(get_cache_args(protocol, cache_type="filecache"))
     else:
         base_args["fo"] = src_path  # type: ignore
     return base_args
@@ -86,7 +86,7 @@ def get_filesystem(
         reference_args = get_reference_args(src_path, protocol, anon)
         return (
             # using blockcache returns '_io.BytesIO' object has no attribute 'blocksize'
-            fsspec.filesystem(DEFAULT_CACHE_TYPE, **reference_args).get_mapper("")
+            fsspec.filesystem("filecache", **reference_args).get_mapper("")
             if enable_fsspec_cache
             else fsspec.filesystem("reference", **reference_args).get_mapper("")
         )
