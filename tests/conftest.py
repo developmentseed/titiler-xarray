@@ -22,7 +22,7 @@ def pytest_sessionstart(session):
     """Setup before tests run."""
     test_cache_dir = "fsspec_test_cache"
     os.environ["TITILER_XARRAY_FSSPEC_CACHE_DIRECTORY"] = test_cache_dir
-    os.mkdir(test_cache_dir)
+    os.makedirs(test_cache_dir, exist_ok=True)
 
 
 def pytest_sessionfinish(session, exitstatus):
