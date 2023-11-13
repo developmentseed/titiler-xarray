@@ -2,11 +2,12 @@
 
 from datetime import datetime
 
-import fsspec
 import netCDF4 as nc
 import numpy as np
 from kerchunk.combine import MultiZarrToZarr
 from kerchunk.hdf import SingleHdf5ToZarr
+
+import fsspec
 
 
 def create_netcdf(filename, date):

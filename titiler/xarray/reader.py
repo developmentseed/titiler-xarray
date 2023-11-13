@@ -5,7 +5,6 @@ import re
 from typing import Any, Dict, List, Optional
 
 import attr
-import fsspec
 import numpy
 import s3fs
 import xarray
@@ -15,6 +14,7 @@ from rio_tiler.constants import WEB_MERCATOR_TMS, WGS84_CRS
 from rio_tiler.io.xarray import XarrayReader
 from rio_tiler.types import BBox
 
+import fsspec
 from titiler.xarray.settings import ApiSettings
 
 api_settings = ApiSettings()
@@ -73,7 +73,7 @@ def get_filesystem(
     """
     if protocol == "s3":
         s3_filesystem = (
-            fsspec.filesystem(DEFAULT_CACHE_TYPE, **get_cache_args(protocol))
+            fsspec.filesystem(DEFAULT_CACHE_TYPE, **get_cache_args(protocol))  # type: ignore
             if enable_fsspec_cache
             else s3fs.S3FileSystem()
         )
@@ -86,16 +86,15 @@ def get_filesystem(
         reference_args = get_reference_args(src_path, protocol, anon)
         return (
             # using blockcache returns '_io.BytesIO' object has no attribute 'blocksize'
-            fsspec.filesystem("filecache", **reference_args).get_mapper("")
+            fsspec.filesystem("filecache", **reference_args).get_mapper("")  # type: ignore
             if enable_fsspec_cache
-            else fsspec.filesystem("reference", **reference_args).get_mapper("")
+            else fsspec.filesystem("reference", **reference_args).get_mapper("")  # type: ignore
         )
     elif protocol in ["https", "http", "file"]:
-        # using blockcache with local files returns "AttributeError: 'list' object has no attribute 'update'"
         filesystem = (
-            fsspec.filesystem(DEFAULT_CACHE_TYPE, **get_cache_args(protocol))
+            fsspec.filesystem(DEFAULT_CACHE_TYPE, **get_cache_args(protocol))  # type: ignore
             if enable_fsspec_cache
-            else fsspec.filesystem(protocol)
+            else fsspec.filesystem(protocol)  # type: ignore
         )
         if xr_engine == "h5netcdf":
             return filesystem.open(src_path)

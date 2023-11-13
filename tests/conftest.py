@@ -27,5 +27,5 @@ def pytest_sessionstart(session):
 
 def pytest_sessionfinish(session, exitstatus):
     """Cleanup step after all tests have been run."""
-    print("\nAll tests are done! Cleaning up...")
     shutil.rmtree(os.environ["TITILER_XARRAY_FSSPEC_CACHE_DIRECTORY"])
+    print("\nAll tests are done! Cleaning up...")
