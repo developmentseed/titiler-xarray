@@ -63,11 +63,6 @@ class LambdaStack(Stack):
             subnet_configuration=[
                 ec2.SubnetConfiguration(
                     name="Public", subnet_type=ec2.SubnetType.PUBLIC, cidr_mask=24
-                ),
-                ec2.SubnetConfiguration(
-                    name="Private Isolated",
-                    subnet_type=ec2.SubnetType.PRIVATE_ISOLATED,
-                    cidr_mask=24,
                 )
             ],
         )
@@ -101,7 +96,7 @@ class LambdaStack(Stack):
             f"{id}-cache-subnet-group",
             description="Subnet group for ElastiCache",
             subnet_ids=vpc.select_subnets(
-                subnet_type=ec2.SubnetType.PRIVATE_ISOLATED
+                subnet_type=ec2.SubnetType.PUBLIC
             ).subnet_ids,
             cache_subnet_group_name=f"{id}-cache-subnet-group",
         )
@@ -125,10 +120,6 @@ class LambdaStack(Stack):
             environment={**DEFAULT_ENV, **environment},
             log_retention=logs.RetentionDays.ONE_WEEK,
         )
-
-        ec2.InterfaceVpcEndpoint(self, "ElasticacheVPCEndpoint",
-                                 vpc=vpc,
-                                 service=ec2.InterfaceVpcEndpointService("com.amazonaws.us-west-2.elasticache"))
 
         for perm in permissions:
             lambda_function.add_to_role_policy(perm)
