@@ -93,12 +93,12 @@ jobs:
       # Build and deploy to the feature environment whenever there is a push to main or dev
       - name: Build & Deploy Feature
         if: github.ref == 'refs/heads/feat/elasticache'
-        run: npm run cdk -- deploy titiler-xarray-feature3 --require-approval never
+        run: npm run cdk -- deploy titiler-xarray-feature --require-approval never
         env:
           TITILER_XARRAY_PYTHONWARNINGS: ignore
           TITILER_XARRAY_DEBUG: True
           STACK_ALARM_EMAIL: ${{ secrets.ALARM_EMAIL }}
-          STACK_STAGE: feature3
+          STACK_STAGE: feature
           TITILER_XARRAY_CACHE_HOST: ${{ secrets.ELASTICACHE_HOST }}
 
       # Build and deploy to the development environment whenever there is a push to main or dev
