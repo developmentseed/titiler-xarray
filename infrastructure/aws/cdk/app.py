@@ -79,7 +79,7 @@ class LambdaStack(Stack):
         # Define the ElastiCache cluster
         redis_cluster = elasticache.CfnCacheCluster(
             self,
-            f"{id}-cache-subnet-group",
+            f"{id}-elasticache",
             cache_node_type="cache.t3.small",
             engine="redis",
             num_cache_nodes=1,
