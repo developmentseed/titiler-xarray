@@ -44,6 +44,7 @@ dependencies = [
 
 [project.optional-dependencies]
 test = [
+    "fakeredis",
     "pytest",
     "pytest-cov",
     "pytest-asyncio",

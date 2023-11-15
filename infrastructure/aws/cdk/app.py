@@ -63,6 +63,11 @@ class LambdaStack(Stack):
             subnet_configuration=[
                 ec2.SubnetConfiguration(
                     name="Public", subnet_type=ec2.SubnetType.PUBLIC, cidr_mask=24
+                ),
+                ec2.SubnetConfiguration(
+                    name="Private Isolated",
+                    subnet_type=ec2.SubnetType.PRIVATE_ISOLATED,
+                    cidr_mask=24,
                 )
             ],
         )

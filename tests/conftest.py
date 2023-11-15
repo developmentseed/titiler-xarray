@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 def app(monkeypatch):
     """App fixture."""
     monkeypatch.setenv("TITILER_XARRAY_DEBUG", "TRUE")
-    monkeypatch.setenv("TITILER_XARRAY_ENABLE_CACHE", "FALSE")
+    monkeypatch.setenv("TEST_ENVIRONMENT", "1")
 
     from titiler.xarray.main import app
 
