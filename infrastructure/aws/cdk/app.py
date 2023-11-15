@@ -128,7 +128,7 @@ class LambdaStack(Stack):
 
         ec2.InterfaceVpcEndpoint(self, "ElasticacheVPCEndpoint",
                                  vpc=vpc,
-                                 service=ec2.InterfaceVpcEndpointService("com.amazonaws.us-west-2.elasticache", "443"))
+                                 service=ec2.InterfaceVpcEndpointService("com.amazonaws.us-west-2.elasticache"))
 
         for perm in permissions:
             lambda_function.add_to_role_policy(perm)
