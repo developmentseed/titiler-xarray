@@ -56,58 +56,38 @@ class LambdaStack(Stack):
         permissions = permissions or []
         environment = environment or {}
 
-        vpc = ec2.Vpc(
-            self,
-            f"{id}-vpc",
-            nat_gateways=1,
-            subnet_configuration=[
-                ec2.SubnetConfiguration(
-                    name="Public", subnet_type=ec2.SubnetType.PUBLIC, cidr_mask=24
-                ),
-                ec2.SubnetConfiguration(
-                    name="Private Isolated",
-                    subnet_type=ec2.SubnetType.PRIVATE_ISOLATED,
-                    cidr_mask=24,
-                )
-            ],
-        )
+        # Define a VPC (or use an existing VPC)
+        vpc = ec2.Vpc(self, f"{id}-vpc", max_azs=2)
 
-        security_group = ec2.SecurityGroup(
-            self,
-            "ElastiCacheSecurityGroup",
-            vpc=vpc,
-            description="Allow local access to ElastiCache redis",
-            allow_all_outbound=True,
-        )
-        security_group.add_ingress_rule(
-            ec2.Peer.any_ipv4(), ec2.Port.tcp(6379)
-        )
+        # Create a security group for the cache cluster
+        cache_security_group = ec2.SecurityGroup(self, f"{id}-CacheSecurityGroup",
+                                                 vpc=vpc,
+                                                 description="Allow access to cache",
+                                                 allow_all_outbound=True)
+        cache_security_group.add_ingress_rule(ec2.Peer.any_ipv4(),
+                                              ec2.Port.tcp(6379),
+                                              "allow Redis access from the world")
 
-        # Create the redis cluster
-        redis_cluster = elasticache.CfnCacheCluster(
-            self,
-            f"{id}-redis-cluster",
-            engine="redis",
-            cache_node_type="cache.t3.small",
-            num_cache_nodes=1,
-            vpc_security_group_ids=[security_group.security_group_id],
-            cache_subnet_group_name=f"{id}-cache-subnet-group",
-            cluster_name=f"{id}-redis-cluster",
-        )
-
-        # Define the subnet group for the ElastiCache cluster
+        # Create an ElastiCache Subnet Group
         subnet_group = elasticache.CfnSubnetGroup(
             self,
-            f"{id}-cache-subnet-group",
+            f"{id}-CacheSubnetGroup",
             description="Subnet group for ElastiCache",
-            subnet_ids=vpc.select_subnets(
-                subnet_type=ec2.SubnetType.PUBLIC
-            ).subnet_ids,
-            cache_subnet_group_name=f"{id}-cache-subnet-group",
+            subnet_ids=[subnet.subnet_id for subnet in vpc.public_subnets]
         )
 
-        # Add dependency - ensure subnet group is created before the cache cluster
+        # Define the ElastiCache cluster
+        redis_cluster = elasticache.CfnCacheCluster(
+            self,
+            f"{id}-cache-subnet-group",
+            cache_node_type="cache.t3.small",
+            engine="redis",
+            num_cache_nodes=1,
+            cache_subnet_group_name=subnet_group.ref,
+            vpc_security_group_ids=[cache_security_group.security_group_id]
+        )
         redis_cluster.add_depends_on(subnet_group)
+
 
         lambda_function = aws_lambda.Function(
             self,
