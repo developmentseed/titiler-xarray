@@ -68,12 +68,7 @@ class LambdaStack(Stack):
                     name="Private Isolated",
                     subnet_type=ec2.SubnetType.PRIVATE_ISOLATED,
                     cidr_mask=24,
-                ),
-                ec2.SubnetConfiguration(
-                    name="Private with NAT",
-                    subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT,
-                    cidr_mask=24,
-                ),
+                )
             ],
         )
 
@@ -85,7 +80,7 @@ class LambdaStack(Stack):
             allow_all_outbound=True,
         )
         security_group.add_ingress_rule(
-            ec2.Peer.ipv4(vpc.vpc_cidr_block), ec2.Port.tcp(6379)
+            "0.0.0.0/0", ec2.Port.tcp(6379)
         )
 
         # Create the redis cluster
@@ -129,11 +124,11 @@ class LambdaStack(Stack):
             timeout=Duration.seconds(timeout),
             environment={**DEFAULT_ENV, **environment},
             log_retention=logs.RetentionDays.ONE_WEEK,
-            vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(
-                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS
-            ),
         )
+
+        ec2.InterfaceVpcEndpoint(self, "ElasticacheVPCEndpoint",
+                                 vpc=vpc,
+                                 service=ec2.InterfaceVpcEndpointService("com.amazonaws.us-west-2.elasticache", "443"))
 
         for perm in permissions:
             lambda_function.add_to_role_policy(perm)
