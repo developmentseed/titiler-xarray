@@ -2,8 +2,9 @@
 
 import logging
 
+from titiler.xarray.redis_pool import get_redis
 import rioxarray
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from starlette.middleware.cors import CORSMiddleware
 
 import titiler.xarray.reader as reader
@@ -88,3 +89,9 @@ if api_settings.debug:
 def ping():
     """Health check."""
     return {"ping": "pong!"}
+
+@app.get("/clear_cache")
+def clear_cache(cache_client=Depends(get_redis)):
+    """Clear the cache."""
+    cache_client.flushall()
+    return {"status": "cache cleared!"}

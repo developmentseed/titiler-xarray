@@ -9,8 +9,6 @@ import attr
 import fsspec
 import numpy
 
-# error: Library stubs not installed for "redis", https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports
-import redis  # type: ignore
 import s3fs
 import xarray
 from morecantile import TileMatrixSet
@@ -18,14 +16,13 @@ from rasterio.crs import CRS
 from rio_tiler.constants import WEB_MERCATOR_TMS, WGS84_CRS
 from rio_tiler.io.xarray import XarrayReader
 from rio_tiler.types import BBox
-
+from fastapi import Depends
+import redis
 from titiler.xarray.settings import ApiSettings
+from titiler.xarray.redis_pool import get_redis
 
 api_settings = ApiSettings()
-
-pool = redis.ConnectionPool(host=api_settings.cache_host, port=6379, db=0)
-client = redis.Redis(connection_pool=pool)
-
+cache_client = get_redis()
 
 def parse_protocol(src_path: str, reference: Optional[bool] = False):
     """
@@ -53,23 +50,37 @@ def xarray_engine(src_path: str):
         return "zarr"
 
 
-def get_file_handler(
-    src_path: str, protocol: str, xr_engine: str, reference: Optional[bool] = False
+def get_filesystem(
+    src_path: str,
+    protocol: str,
+    xr_engine: str,
+    anon: bool = True,
 ):
     """
-    Returns the appropriate file handler based on the protocol.
+    Get the filesystem for the given source path.
     """
-    if protocol in ["https", "http"] or xr_engine == "h5netcdf":
-        fs = fsspec.filesystem(protocol)
-        return fs.open(src_path)
-    elif protocol == "s3":
-        fs = s3fs.S3FileSystem()
-        return s3fs.S3Map(root=src_path, s3=fs)
-    elif reference:
-        fs = fsspec.filesystem("reference", fo=src_path, remote_options={"anon": True})
-        return fs.get_mapper("")
+    if protocol == "s3":
+        s3_filesystem = s3fs.S3FileSystem()
+        return (
+            s3_filesystem.open(src_path)
+            if xr_engine == "h5netcdf"
+            else s3fs.S3Map(root=src_path, s3=s3_filesystem)
+        )
+    elif protocol == "reference":
+        reference_args = {
+            "fo": src_path,
+            "remote_options": {"anon": anon}
+        }
+        return fsspec.filesystem("reference", **reference_args).get_mapper("")
+    elif protocol in ["https", "http", "file"]:
+        filesystem = fsspec.filesystem(protocol)  # type: ignore
+        return (
+            filesystem.open(src_path)
+            if xr_engine == "h5netcdf"
+            else filesystem.get_mapper(src_path)
+        )
     else:
-        return src_path
+        raise ValueError(f"Unsupported protocol: {protocol}")
 
 
 def xarray_open_dataset(
@@ -80,17 +91,16 @@ def xarray_open_dataset(
     consolidated: Optional[bool] = True,
 ) -> xarray.Dataset:
     """Open dataset."""
-
     # Generate cache key and attempt to fetch the dataset from cache
     if api_settings.enable_cache:
         cache_key = f"{src_path}_{group}" if group is not None else src_path
-        data_bytes = client.get(cache_key)
+        data_bytes = cache_client.get(cache_key)
         if data_bytes:
             return pickle.loads(data_bytes)
 
     protocol = parse_protocol(src_path, reference=reference)
     xr_engine = xarray_engine(src_path)
-    file_handler = get_file_handler(src_path, protocol, xr_engine, reference)
+    file_handler = get_filesystem(src_path, protocol, xr_engine)
 
     # Arguments for xarray.open_dataset
     # Default args
@@ -119,7 +129,7 @@ def xarray_open_dataset(
     if api_settings.enable_cache:
         # Serialize the dataset to bytes using pickle
         data_bytes = pickle.dumps(ds)
-        client.set(cache_key, data_bytes)
+        cache_client.set(cache_key, data_bytes)
     return ds
 
 
