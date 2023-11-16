@@ -48,7 +48,7 @@
             }
 
             /* Input field styling */
-            #url-input, #variable-input, #rescale-input, #colormap-dropdown, #variable-select {
+            #url-input, #group-input, #variable-input, #rescale-input, #colormap-dropdown, #variable-select {
                 width: 80%;
                 padding: 10px;
                 margin: 10px 0;
@@ -123,13 +123,18 @@
                 <input type="text" id="url-input" placeholder="Enter URL">
                 <input type="text" id="group-input" placeholder="Zarr group (optional)">
                 <br />
-
+                <h4>Step 2: Define other fields to use when opening the URL with xarray</h4>
                 <input type="checkbox" id="reference" name="reference">
                 <label for="reference">Is this URL for a reference file (i.e. <a href="https://fsspec.github.io/kerchunk">kerchunk</a>)?:</label>
                 <br />
-
+                <br />
                 <input type="checkbox" id="consolidated" name="consolidated" checked>
-                <label for="consolidated">Does this Zarr store have consolidated metadata? (default should be to have consolidated metadata, learn more in the: <a href="https://zarr.readthedocs.io/en/stable/tutorial.html#consolidating-metadata">Zarr docs</a>)?:</label>
+                <label for="consolidated">Does this Zarr store have consolidated metadata? (default should be to have consolidated metadata, learn more in the: <a href="https://zarr.readthedocs.io/en/stable/tutorial.html#consolidating-metadata">Zarr docs</a>).</label>
+                <br />
+                <br />
+                <input type="text" id="group-input" placeholder="OPTIONAL: Group">
+                <span><i><br />If the URL is for a zarr hierarchy or HDF5, please specify the group to use when opening the dataset.</i></span>
+                <br />
                 <br />
 
                 <!-- Variable input -->
@@ -257,6 +262,15 @@
                         return num.toFixed(4);
                     }
                 }
+                function isNonEmptyString(str) {
+                    return typeof str === 'string' && str.length > 0;
+                }
+
+                function isStringInteger(str) {
+                    if (!str.trim()) return false;  // Check for empty strings after trimming white space
+                    const num = parseFloat(str);
+                    return !isNaN(num) && Number.isInteger(num) && String(num) === str;
+                }
 
                 document.getElementById("get-histogram-btn").addEventListener("click", function() {
                     const loadingIcon = document.getElementById('loading-icon-histogram');
@@ -342,8 +356,11 @@
                         if (colormapValue) {
                             href += `&colormap_name=${encodeURIComponent(colormapValue)}`;
                         }
-                        if (groupValue) {
+                        if (isNonEmptyString(groupValue)) {
                             href += `&group=${groupValue}`;
+                        }
+                        if (isStringInteger(groupValue)) {
+                            href += `&multiscale=true`;
                         }
                         window.location.href = href;
                     }
