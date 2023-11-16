@@ -59,15 +59,10 @@ class LambdaStack(Stack):
         vpc = ec2.Vpc(
             self,
             f"{id}-vpc",
-            nat_gateways=1,
+            max_azs=2,
             subnet_configuration=[
                 ec2.SubnetConfiguration(
                     name="Public", subnet_type=ec2.SubnetType.PUBLIC, cidr_mask=24
-                ),
-                ec2.SubnetConfiguration(
-                    name="Private Isolated",
-                    subnet_type=ec2.SubnetType.PRIVATE_ISOLATED,
-                    cidr_mask=24,
                 )
             ],
         )
@@ -101,7 +96,7 @@ class LambdaStack(Stack):
             f"{id}-cache-subnet-group",
             description="Subnet group for ElastiCache",
             subnet_ids=vpc.select_subnets(
-                subnet_type=ec2.SubnetType.PRIVATE_ISOLATED
+                subnet_type=ec2.SubnetType.PUBLIC
             ).subnet_ids,
             cache_subnet_group_name=f"{id}-cache-subnet-group",
         )
@@ -126,7 +121,7 @@ class LambdaStack(Stack):
             log_retention=logs.RetentionDays.ONE_WEEK,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(
-                subnet_type=ec2.SubnetType.PRIVATE_ISOLATED
+                subnet_type=ec2.SubnetType.PUBLIC
             ),
         )
 
