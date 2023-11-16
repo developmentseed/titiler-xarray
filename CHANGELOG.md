@@ -7,6 +7,13 @@
 * Add support for a group parameter in `/histogram` route.
 * Catch `zarr.errors.GroupNotFoundError` and raise 422 in the `tiles` route. When the `multiscale` parameter is `true` but the zoom level doesn't exist as a group in the zarr hierarchy, this error is raised.
 
+### Add metadata caching via redis cache and AWS elasticache
+
+* Added metadata caching via redis cache and AWS elasticache.
+* Use fakeredis for cache in tests.
+* Remove [starlette-cramjam CompressionMiddleware](https://github.com/developmentseed/starlette-cramjam).
+* Address more cases of protocol/engine combinations in reader.py#get_filesystem.
+
 ## v0.1.1
 
 Support for NetCDF and making consolidated metadata optional. See https://github.com/developmentseed/titiler-xarray/pull/39.
