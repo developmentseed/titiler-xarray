@@ -122,6 +122,14 @@ class LambdaStack(Stack):
             allow_public_subnet=True,
         )
 
+        # Create an S3 VPC Endpoint
+        ec2.GatewayVpcEndpoint(
+            self,
+            f"{id}-S3VpcEndpoint",
+            vpc=vpc,
+            service=ec2.GatewayVpcEndpointAwsService.S3,
+        )
+
         for perm in permissions:
             lambda_function.add_to_role_policy(perm)
 
