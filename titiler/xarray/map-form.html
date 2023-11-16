@@ -19,7 +19,6 @@
                 height:100%;
                 background-color: #e5e5e5;
             }
-
             .hidden {
               display: none;
             }
@@ -49,7 +48,7 @@
             }
 
             /* Input field styling */
-            #url-input, #variable-input, #rescale-input, #colormap-dropdown, #variable-select {
+            #url-input, #group-input, #variable-input, #rescale-input, #colormap-dropdown, #variable-select {
                 width: 80%;
                 padding: 10px;
                 margin: 10px 0;
@@ -127,8 +126,14 @@
                 <input type="checkbox" id="reference" name="reference">
                 <label for="reference">Is this URL for a reference file (i.e. <a href="https://fsspec.github.io/kerchunk">kerchunk</a>)?:</label>
                 <br />
+                <br />
                 <input type="checkbox" id="consolidated" name="consolidated" checked>
                 <label for="consolidated">Does this Zarr store have consolidated metadata? (default should be to have consolidated metadata, learn more in the: <a href="https://zarr.readthedocs.io/en/stable/tutorial.html#consolidating-metadata">Zarr docs</a>).</label>
+                <br />
+                <br />
+                <input type="text" id="group-input" placeholder="OPTIONAL: Group">
+                <span><i><br />If the URL is for a zarr hierarchy or HDF5, please specify the group to use when opening the dataset.</i></span>
+                <br />
                 <br />
 
                 <!-- Variable input -->
@@ -204,11 +209,15 @@
                     const loadingIcon = document.getElementById('loading-icon-variables');
                     loadingIcon.style.display = 'inline-block';
                     var urlValue = document.getElementById("url-input").value;
+                    var groupValue = document.getElementById("group-input").value;
                     var reference = document.getElementById("reference").checked;
                     var consolidated = document.getElementById("consolidated").checked;
 
                     // Fetch data from a URL
                     var variablesPath = `/variables?url=${encodeURIComponent(urlValue)}&reference=${reference}&consolidated=${consolidated}`
+                    if (groupValue) {
+                        variablesPath += `&group=${groupValue}`
+                    }
                     fetch(variablesPath)
                         .then(response => response.json())
                         .then(data => {
@@ -266,11 +275,15 @@
                     const loadingIcon = document.getElementById('loading-icon-histogram');
                     loadingIcon.style.display = 'inline-block';
                     var urlValue = document.getElementById("url-input").value;
+                    var groupValue = document.getElementById("group-input").value;
                     var reference = document.getElementById("reference").checked;
                     var consolidated = document.getElementById("consolidated").checked;
                     var variableInput = getVariableInput();
                     // Fetch data from a URL
                     var histogramPath = `/histogram?url=${encodeURIComponent(urlValue)}&variable=${encodeURIComponent(variableInput)}&reference=${reference}&consolidated=${consolidated}`
+                    if (groupValue) {
+                        histogramPath += `&group=${groupValue}`
+                    }
                     fetch(histogramPath) // Replace this with the actual URL
                         .then(response => response.json()) // Assuming server responds with JSON
                         .then(data => {
@@ -324,6 +337,7 @@
                 // Go button action
                 document.getElementById("go-btn").addEventListener("click", function() {
                     var urlValue = document.getElementById("url-input").value;
+                    var groupValue = document.getElementById("group-input").value;
                     var reference = document.getElementById("reference").checked;
                     var variableValue = getVariableInput();
                     var rescaleValue = document.getElementById("rescale-input").value;
@@ -340,6 +354,12 @@
                         }
                         if (colormapValue) {
                             href += `&colormap_name=${encodeURIComponent(colormapValue)}`;
+                        }
+                        if (isNonEmptyString(groupValue)) {
+                            href += `&group=${groupValue}`;
+                        }
+                        if (isStringInteger(groupValue)) {
+                            href += `&multiscale=true`;
                         }
                         window.location.href = href;
                     }

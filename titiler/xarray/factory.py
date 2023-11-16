@@ -1,7 +1,7 @@
 """TiTiler.xarray factory."""
 
 from dataclasses import dataclass
-from typing import Dict, List, Literal, Optional, Type, Union
+from typing import Dict, List, Literal, Optional, Type
 from urllib.parse import urlencode
 
 import jinja2
@@ -229,19 +229,13 @@ class ZarrTilerFactory(BaseTilerFactory):
                     description="Whether to expect and open zarr store with consolidated metadata",
                 ),
             ] = True,
-            group: Annotated[
-                Optional[Union[str, int]],
-                Query(
-                    description="Select a specific zarr group from a zarr hierarchy."
-                ),
-            ] = None,
         ) -> Response:
             """Create map tile from a dataset."""
             tms = self.supported_tms.get(tileMatrixSetId)
             with self.reader(
                 url,
                 variable=variable,
-                group=z if multiscale else group,
+                group=z if multiscale else None,
                 reference=reference,
                 decode_times=decode_times,
                 drop_dim=drop_dim,
@@ -373,6 +367,7 @@ class ZarrTilerFactory(BaseTilerFactory):
                 "tile_scale",
                 "minzoom",
                 "maxzoom",
+                "group",
             ]
             qs = [
                 (key, value)
@@ -383,6 +378,7 @@ class ZarrTilerFactory(BaseTilerFactory):
                 tiles_url += f"?{urlencode(qs)}"
 
             tms = self.supported_tms.get(tileMatrixSetId)
+
             with self.reader(
                 url,
                 variable=variable,
@@ -391,7 +387,6 @@ class ZarrTilerFactory(BaseTilerFactory):
                 decode_times=decode_times,
                 tms=tms,
                 consolidated=consolidated,
-                drop_dim=drop_dim,
             ) as src_dst:
                 # see https://github.com/corteva/rioxarray/issues/645
                 minx, miny, maxx, maxy = zip(
