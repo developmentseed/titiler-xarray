@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Optional
 import attr
 import fsspec
 import numpy
-
 import s3fs
 import xarray
 from morecantile import TileMatrixSet
@@ -16,13 +15,13 @@ from rasterio.crs import CRS
 from rio_tiler.constants import WEB_MERCATOR_TMS, WGS84_CRS
 from rio_tiler.io.xarray import XarrayReader
 from rio_tiler.types import BBox
-from fastapi import Depends
-import redis
-from titiler.xarray.settings import ApiSettings
+
 from titiler.xarray.redis_pool import get_redis
+from titiler.xarray.settings import ApiSettings
 
 api_settings = ApiSettings()
 cache_client = get_redis()
+
 
 def parse_protocol(src_path: str, reference: Optional[bool] = False):
     """
@@ -67,10 +66,7 @@ def get_filesystem(
             else s3fs.S3Map(root=src_path, s3=s3_filesystem)
         )
     elif protocol == "reference":
-        reference_args = {
-            "fo": src_path,
-            "remote_options": {"anon": anon}
-        }
+        reference_args = {"fo": src_path, "remote_options": {"anon": anon}}
         return fsspec.filesystem("reference", **reference_args).get_mapper("")
     elif protocol in ["https", "http", "file"]:
         filesystem = fsspec.filesystem(protocol)  # type: ignore
@@ -132,6 +128,7 @@ def xarray_open_dataset(
         cache_client.set(cache_key, data_bytes)
     return ds
 
+
 def arrange_coordinates(da: xarray.DataArray) -> xarray.DataArray:
     """
     Arrange coordinates to DataArray.
@@ -150,8 +147,9 @@ def arrange_coordinates(da: xarray.DataArray) -> xarray.DataArray:
     if "time" in da.dims:
         da = da.transpose("time", "y", "x")
     else:
-        da = da.transpose("y", "x")        
+        da = da.transpose("y", "x")
     return da
+
 
 def get_variable(
     ds: xarray.Dataset,

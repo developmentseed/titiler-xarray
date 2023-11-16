@@ -95,9 +95,7 @@ class LambdaStack(Stack):
             self,
             f"{id}-cache-subnet-group",
             description="Subnet group for ElastiCache",
-            subnet_ids=vpc.select_subnets(
-                subnet_type=ec2.SubnetType.PUBLIC
-            ).subnet_ids,
+            subnet_ids=vpc.select_subnets(subnet_type=ec2.SubnetType.PUBLIC).subnet_ids,
             cache_subnet_group_name=f"{id}-cache-subnet-group",
         )
 
@@ -120,9 +118,7 @@ class LambdaStack(Stack):
             environment={**DEFAULT_ENV, **environment},
             log_retention=logs.RetentionDays.ONE_WEEK,
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(
-                subnet_type=ec2.SubnetType.PUBLIC
-            ),
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
             allow_public_subnet=True,
         )
 

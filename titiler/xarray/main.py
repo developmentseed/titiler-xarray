@@ -2,9 +2,8 @@
 
 import logging
 
-from titiler.xarray.redis_pool import get_redis
 import rioxarray
-from fastapi import FastAPI, Depends
+from fastapi import Depends, FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
 import titiler.xarray.reader as reader
@@ -18,6 +17,7 @@ from titiler.core.middleware import (
 from titiler.xarray import __version__ as titiler_version
 from titiler.xarray.factory import ZarrTilerFactory
 from titiler.xarray.middleware import ServerTimingMiddleware
+from titiler.xarray.redis_pool import get_redis
 from titiler.xarray.settings import ApiSettings
 
 logging.getLogger("botocore.credentials").disabled = True
@@ -89,6 +89,7 @@ if api_settings.debug:
 def ping():
     """Health check."""
     return {"ping": "pong!"}
+
 
 @app.get("/clear_cache")
 def clear_cache(cache_client=Depends(get_redis)):
