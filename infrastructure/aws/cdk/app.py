@@ -123,6 +123,7 @@ class LambdaStack(Stack):
             vpc_subnets=ec2.SubnetSelection(
                 subnet_type=ec2.SubnetType.PUBLIC
             ),
+            allow_public_subnet=True,
         )
 
         for perm in permissions:
