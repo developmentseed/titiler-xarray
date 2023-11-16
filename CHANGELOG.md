@@ -13,6 +13,7 @@
 * Use fakeredis for cache in tests.
 * Remove [starlette-cramjam CompressionMiddleware](https://github.com/developmentseed/starlette-cramjam).
 * Address more cases of protocol/engine combinations in reader.py#get_filesystem.
+* Moved cftime and pandas requirements from Dockerfile to pyproject.toml.
 
 ## v0.1.1
 
