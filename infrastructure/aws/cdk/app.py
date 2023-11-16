@@ -125,7 +125,7 @@ class LambdaStack(Stack):
         # Create an S3 VPC Endpoint
         ec2.GatewayVpcEndpoint(
             self,
-            f"{id}-S3VpcEndpoint",
+            f"{id}-s3-vpc-endpoint",
             vpc=vpc,
             service=ec2.GatewayVpcEndpointAwsService.S3,
         )
