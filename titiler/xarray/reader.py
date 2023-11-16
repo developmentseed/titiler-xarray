@@ -79,51 +79,6 @@ def get_filesystem(
         raise ValueError(f"Unsupported protocol: {protocol}")
 
 
-def parse_protocol(src_path: str, reference: Optional[bool] = False):
-    """
-    Parse protocol from path.
-    """
-    match = re.match(r"^(s3|https|http)", src_path)
-    protocol = "file"
-    if match:
-        protocol = match.group(0)
-    # override protocol if reference
-    if reference:
-        protocol = "reference"
-    return protocol
-
-
-def xarray_engine(src_path: str):
-    """
-    Parse xarray engine from path.
-    """
-    H5NETCDF_EXTENSIONS = [".nc", ".nc4"]
-    lower_filename = src_path.lower()
-    if any(lower_filename.endswith(ext) for ext in H5NETCDF_EXTENSIONS):
-        return "h5netcdf"
-    else:
-        return "zarr"
-
-
-def get_file_handler(
-    src_path: str, protocol: str, xr_engine: str, reference: Optional[bool] = False
-):
-    """
-    Returns the appropriate file handler based on the protocol.
-    """
-    if protocol in ["https", "http"] or xr_engine == "h5netcdf":
-        fs = fsspec.filesystem(protocol)
-        return fs.open(src_path)
-    elif protocol == "s3":
-        fs = s3fs.S3FileSystem()
-        return s3fs.S3Map(root=src_path, s3=fs)
-    elif reference:
-        fs = fsspec.filesystem("reference", fo=src_path, remote_options={"anon": True})
-        return fs.get_mapper("")
-    else:
-        return src_path
-
-
 def xarray_open_dataset(
     src_path: str,
     group: Optional[Any] = None,
@@ -149,9 +104,6 @@ def xarray_open_dataset(
         "decode_coords": "all",
         "decode_times": decode_times,
     }
-    # Argument if we're opening a datatree
-    if group:
-        xr_open_args["group"] = group
 
     # Argument if we're opening a datatree
     if type(group) == int:
