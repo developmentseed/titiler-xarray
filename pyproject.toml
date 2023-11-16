@@ -30,6 +30,7 @@ dependencies = [
     "xarray",
     "rioxarray",
     "zarr",
+    "fakeredis",
     "fsspec",
     "s3fs",
     "aiohttp",
@@ -44,7 +45,6 @@ dependencies = [
 
 [project.optional-dependencies]
 test = [
-    "fakeredis",
     "pytest",
     "pytest-cov",
     "pytest-asyncio",
