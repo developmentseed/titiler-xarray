@@ -91,7 +91,7 @@ jobs:
       # Build and deploy to the development environment whenever there is a push to main or dev
       - name: Build & Deploy Development
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
-        run: npm run cdk -- deploy titiler-xarray-development
+        run: npm run cdk -- deploy titiler-xarray-development --require-approval never
         env:
           TITILER_XARRAY_PYTHONWARNINGS: ignore
           TITILER_XARRAY_DEBUG: True
