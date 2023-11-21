@@ -2,6 +2,7 @@ name: Test and Deploy
 
 # Triggers on pushes to main, dev and tags.
 on:
+  workflow_dispatch:
   push:
     branches:
     - main
