@@ -1,6 +1,7 @@
 """ZarrReader."""
 
 import contextlib
+import pickle
 import re
 from typing import Any, Dict, List, Optional
 
@@ -14,6 +15,12 @@ from rasterio.crs import CRS
 from rio_tiler.constants import WEB_MERCATOR_TMS, WGS84_CRS
 from rio_tiler.io.xarray import XarrayReader
 from rio_tiler.types import BBox
+
+from titiler.xarray.redis_pool import get_redis
+from titiler.xarray.settings import ApiSettings
+
+api_settings = ApiSettings()
+cache_client = get_redis()
 
 
 def parse_protocol(src_path: str, reference: Optional[bool] = False):
@@ -34,6 +41,7 @@ def xarray_engine(src_path: str):
     """
     Parse xarray engine from path.
     """
+    #  ".hdf", ".hdf5", ".h5" will be supported once we have tests + expand the type permitted for the group parameter
     H5NETCDF_EXTENSIONS = [".nc", ".nc4"]
     lower_filename = src_path.lower()
     if any(lower_filename.endswith(ext) for ext in H5NETCDF_EXTENSIONS):
@@ -42,23 +50,34 @@ def xarray_engine(src_path: str):
         return "zarr"
 
 
-def get_file_handler(
-    src_path: str, protocol: str, xr_engine: str, reference: Optional[bool] = False
+def get_filesystem(
+    src_path: str,
+    protocol: str,
+    xr_engine: str,
+    anon: bool = True,
 ):
     """
-    Returns the appropriate file handler based on the protocol.
+    Get the filesystem for the given source path.
     """
-    if protocol in ["https", "http"] or xr_engine == "h5netcdf":
-        fs = fsspec.filesystem(protocol)
-        return fs.open(src_path)
-    elif protocol == "s3":
-        fs = s3fs.S3FileSystem()
-        return s3fs.S3Map(root=src_path, s3=fs)
-    elif reference:
-        fs = fsspec.filesystem("reference", fo=src_path, remote_options={"anon": True})
-        return fs.get_mapper("")
+    if protocol == "s3":
+        s3_filesystem = s3fs.S3FileSystem()
+        return (
+            s3_filesystem.open(src_path)
+            if xr_engine == "h5netcdf"
+            else s3fs.S3Map(root=src_path, s3=s3_filesystem)
+        )
+    elif protocol == "reference":
+        reference_args = {"fo": src_path, "remote_options": {"anon": anon}}
+        return fsspec.filesystem("reference", **reference_args).get_mapper("")
+    elif protocol in ["https", "http", "file"]:
+        filesystem = fsspec.filesystem(protocol)  # type: ignore
+        return (
+            filesystem.open(src_path)
+            if xr_engine == "h5netcdf"
+            else filesystem.get_mapper(src_path)
+        )
     else:
-        return src_path
+        raise ValueError(f"Unsupported protocol: {protocol}")
 
 
 def xarray_open_dataset(
@@ -69,10 +88,16 @@ def xarray_open_dataset(
     consolidated: Optional[bool] = True,
 ) -> xarray.Dataset:
     """Open dataset."""
+    # Generate cache key and attempt to fetch the dataset from cache
+    if api_settings.enable_cache:
+        cache_key = f"{src_path}_{group}" if group is not None else src_path
+        data_bytes = cache_client.get(cache_key)
+        if data_bytes:
+            return pickle.loads(data_bytes)
 
     protocol = parse_protocol(src_path, reference=reference)
     xr_engine = xarray_engine(src_path)
-    file_handler = get_file_handler(src_path, protocol, xr_engine, reference)
+    file_handler = get_filesystem(src_path, protocol, xr_engine)
 
     # Arguments for xarray.open_dataset
     # Default args
@@ -98,6 +123,10 @@ def xarray_open_dataset(
         xr_open_args["consolidated"] = False
         xr_open_args["backend_kwargs"] = {"consolidated": False}
     ds = xarray.open_dataset(file_handler, **xr_open_args)
+    if api_settings.enable_cache:
+        # Serialize the dataset to bytes using pickle
+        data_bytes = pickle.dumps(ds)
+        cache_client.set(cache_key, data_bytes)
     return ds
 
 
@@ -136,6 +165,7 @@ def get_variable(
     if drop_dim:
         dim_to_drop, dim_val = drop_dim.split("=")
         da = da.sel({dim_to_drop: dim_val}).drop(dim_to_drop)
+    da = arrange_coordinates(da)
 
     if (da.x > 180).any():
         # Adjust the longitude coordinates to the -180 to 180 range
@@ -148,13 +178,9 @@ def get_variable(
     crs = da.rio.crs or "epsg:4326"
     da.rio.write_crs(crs, inplace=True)
 
-    # TODO - address this time_slice issue
     if "time" in da.dims:
         if time_slice:
             time_as_str = time_slice.split("T")[0]
-            # TODO(aimee): when do we actually need multiple slices of data?
-            # Perhaps if aggregating for coverage?
-            # ds = ds[time_slice : time_slice + 1]
             if da["time"].dtype == "O":
                 da["time"] = da["time"].astype("datetime64[ns]")
             da = da.sel(

@@ -15,6 +15,8 @@ class ApiSettings(BaseSettings):
     debug: bool = False
 
     model_config = SettingsConfigDict(env_prefix="TITILER_XARRAY_", env_file=".env")
+    cache_host: str = "127.0.0.1"
+    enable_cache: bool = True
 
     @field_validator("cors_origins")
     def parse_cors_origin(cls, v):
