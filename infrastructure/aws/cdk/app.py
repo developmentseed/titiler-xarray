@@ -199,7 +199,7 @@ if settings.buckets:
 lambda_stack = LambdaStack(
     app,
     f"{settings.name}-{settings.stage}",
-    memory=settings.memory,
+    memory=10240,
     timeout=settings.timeout,
     concurrent=settings.max_concurrent,
     permissions=perms,
