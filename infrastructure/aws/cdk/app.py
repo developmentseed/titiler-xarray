@@ -102,7 +102,11 @@ class LambdaStack(Stack):
         # Add dependency - ensure subnet group is created before the cache cluster
         redis_cluster.add_depends_on(subnet_group)
 
-        veda_reader_role = iam.Role.from_role_arn(self, "veda-reader-dev-role", role_arn=f"arn:aws:iam::{self.account}:role/veda-data-reader-dev")
+        veda_reader_role = iam.Role.from_role_arn(
+            self,
+            "veda-reader-dev-role",
+            role_arn=f"arn:aws:iam::{self.account}:role/veda-data-reader-dev",
+        )
 
         lambda_function = aws_lambda.Function(
             self,
@@ -117,15 +121,16 @@ class LambdaStack(Stack):
             memory_size=memory,
             reserved_concurrent_executions=concurrent,
             timeout=Duration.seconds(timeout),
-            environment={**DEFAULT_ENV, **environment},
+            environment={
+                **DEFAULT_ENV,
+                **environment,
+                "TITILER_XARRAY_CACHE_HOST": redis_cluster.attr_redis_endpoint_address,
+            },
             log_retention=logs.RetentionDays.ONE_WEEK,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
             allow_public_subnet=True,
             role=veda_reader_role,
-            environment={
-                "TITILER_XARRAY_CACHE_HOST": redis_cluster.attr_redis_endpoint_address
-            }
         )
 
         # Create an S3 VPC Endpoint
