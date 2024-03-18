@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 
 import attr
 import fsspec
+import gcsfs
 import numpy
 import s3fs
 import xarray
@@ -27,7 +28,7 @@ def parse_protocol(src_path: str, reference: Optional[bool] = False):
     """
     Parse protocol from path.
     """
-    match = re.match(r"^(s3|https|http)", src_path)
+    match = re.match(r"^(s3|gs|https|http)", src_path)
     protocol = "file"
     if match:
         protocol = match.group(0)
@@ -65,6 +66,13 @@ def get_filesystem(
             s3_filesystem.open(src_path)
             if xr_engine == "h5netcdf"
             else s3fs.S3Map(root=src_path, s3=s3_filesystem)
+        )
+    elif protocol == "gs":
+        g3_filesystem = gcsfs.GCSFileSystem()
+        return (
+            g3_filesystem.open(src_path)
+            if xr_engine == "h5netcdf"
+            else g3_filesystem.get_mapper(root=src_path)
         )
     elif protocol == "reference":
         reference_args = {"fo": src_path, "remote_options": {"anon": anon}}

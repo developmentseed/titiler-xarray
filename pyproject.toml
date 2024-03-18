@@ -33,6 +33,7 @@ dependencies = [
     "fakeredis",
     "fsspec",
     "s3fs",
+    "gcsfs",
     "aiohttp",
     "requests",
     "pydantic==2.0.2",
@@ -40,6 +41,7 @@ dependencies = [
     "pydantic-settings~=2.0",
     "pandas==1.5.3",
     "redis",
+    "starlette<0.28",
 ]
 
 [project.optional-dependencies]
