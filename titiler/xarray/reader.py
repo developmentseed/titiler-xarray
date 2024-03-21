@@ -155,7 +155,7 @@ def arrange_coordinates(da: xarray.DataArray) -> xarray.DataArray:
 def get_variable(
     ds: xarray.Dataset,
     variable: str,
-    time_slice: Optional[str] = None,
+    datetime: Optional[str] = None,
     drop_dim: Optional[str] = None,
 ) -> xarray.DataArray:
     """Get Xarray variable as DataArray."""
@@ -179,8 +179,8 @@ def get_variable(
         da = da.sortby(da.x)
 
     if "time" in da.dims:
-        if time_slice:
-            time_as_str = time_slice.split("T")[0]
+        if datetime:
+            time_as_str = datetime.split("T")[0]
             if da["time"].dtype == "O":
                 da["time"] = da["time"].astype("datetime64[ns]")
             da = da.sel(
@@ -206,7 +206,7 @@ class ZarrReader(XarrayReader):
     consolidated: Optional[bool] = attr.ib(default=True)
 
     # xarray.DataArray options
-    time_slice: Optional[str] = attr.ib(default=None)
+    datetime: Optional[str] = attr.ib(default=None)
     drop_dim: Optional[str] = attr.ib(default=None)
 
     tms: TileMatrixSet = attr.ib(default=WEB_MERCATOR_TMS)
@@ -237,7 +237,7 @@ class ZarrReader(XarrayReader):
         self.input = get_variable(
             self.ds,
             self.variable,
-            time_slice=self.time_slice,
+            datetime=self.datetime,
             drop_dim=self.drop_dim,
         )
 
