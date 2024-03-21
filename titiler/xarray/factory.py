@@ -214,7 +214,7 @@ class ZarrTilerFactory(BaseTilerFactory):
                 Optional[str],
                 Query(description="Dimension to drop"),
             ] = None,
-            time_slice: Annotated[
+            datetime: Annotated[
                 Optional[str], Query(description="Slice of time to read (if available)")
             ] = None,
             post_process=Depends(self.process_dependency),
@@ -239,7 +239,7 @@ class ZarrTilerFactory(BaseTilerFactory):
                 reference=reference,
                 decode_times=decode_times,
                 drop_dim=drop_dim,
-                time_slice=time_slice,
+                datetime=datetime,
                 tms=tms,
                 consolidated=consolidated,
             ) as src_dst:
@@ -313,7 +313,7 @@ class ZarrTilerFactory(BaseTilerFactory):
                 Optional[str],
                 Query(description="Dimension to drop"),
             ] = None,
-            time_slice: Annotated[
+            datetime: Annotated[
                 Optional[str], Query(description="Slice of time to read (if available)")
             ] = None,
             tile_format: Annotated[
@@ -490,7 +490,7 @@ class ZarrTilerFactory(BaseTilerFactory):
                 Optional[str],
                 Query(description="Dimension to drop"),
             ] = None,
-            time_slice: Annotated[
+            datetime: Annotated[
                 Optional[str], Query(description="Slice of time to read (if available)")
             ] = None,
             tile_format: Annotated[
