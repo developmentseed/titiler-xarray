@@ -33,7 +33,6 @@ dependencies = [
     "fakeredis",
     "fsspec",
     "s3fs",
-    "gcsfs",
     "aiohttp",
     "requests",
     "pydantic==2.0.2",
@@ -61,6 +60,9 @@ debug = [
 ]
 server = [
     "uvicorn"
+]
+gcs = [
+    "gcsfs"
 ]
 
 [project.urls]
