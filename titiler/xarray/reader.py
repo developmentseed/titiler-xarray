@@ -68,11 +68,11 @@ def get_filesystem(
             else s3fs.S3Map(root=src_path, s3=s3_filesystem)
         )
     elif protocol == "gs":
-        g3_filesystem = gcsfs.GCSFileSystem()
+        gcs_filesystem = gcsfs.GCSFileSystem()
         return (
-            g3_filesystem.open(src_path)
+            gcs_filesystem.open(src_path)
             if xr_engine == "h5netcdf"
-            else g3_filesystem.get_mapper(root=src_path)
+            else gcs_filesystem.get_mapper(root=src_path)
         )
     elif protocol == "reference":
         reference_args = {"fo": src_path, "remote_options": {"anon": anon}}
