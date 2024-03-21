@@ -40,6 +40,8 @@ dependencies = [
     "pydantic-settings~=2.0",
     "pandas==1.5.3",
     "redis",
+    "fastapi>=0.100.0,<0.107.0",
+    "starlette<0.28",
 ]
 
 [project.optional-dependencies]
