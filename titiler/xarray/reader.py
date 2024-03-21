@@ -170,7 +170,7 @@ def get_variable(
     # Make sure we have a valid CRS
     crs = da.rio.crs or "epsg:4326"
     da.rio.write_crs(crs, inplace=True)
-    
+
     if crs == "epsg:4326" and (da.x > 180).any():
         # Adjust the longitude coordinates to the -180 to 180 range
         da = da.assign_coords(x=(da.x + 180) % 360 - 180)
