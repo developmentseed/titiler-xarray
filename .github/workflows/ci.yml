@@ -102,7 +102,7 @@ jobs:
       # Build and deploy to production deployment whenever there a new tag is pushed
       - name: Build & Deploy Production
         if: startsWith(github.ref, 'refs/tags/v')
-        run: npm run cdk -- deploy titiler-xarray-production
+        run: npm run cdk -- deploy titiler-xarray-production --require-approval never
         env:
           TITILER_XARRAY_PYTHONWARNINGS: ignore
           TITILER_XARRAY_DEBUG: True
