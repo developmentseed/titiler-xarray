@@ -19,6 +19,11 @@ from rio_tiler.types import BBox
 from titiler.xarray.redis_pool import get_redis
 from titiler.xarray.settings import ApiSettings
 
+try:
+    import gcsfs
+except ImportError:  # pragma: nocover
+    gcsfs = None  # type: ignore
+
 api_settings = ApiSettings()
 cache_client = get_redis()
 
@@ -27,7 +32,7 @@ def parse_protocol(src_path: str, reference: Optional[bool] = False):
     """
     Parse protocol from path.
     """
-    match = re.match(r"^(s3|https|http)", src_path)
+    match = re.match(r"^(s3|gs|https|http)", src_path)
     protocol = "file"
     if match:
         protocol = match.group(0)
@@ -65,6 +70,14 @@ def get_filesystem(
             s3_filesystem.open(src_path)
             if xr_engine == "h5netcdf"
             else s3fs.S3Map(root=src_path, s3=s3_filesystem)
+        )
+    elif protocol == "gs":
+        assert gcsfs is not None, "'gcsfs' must be installed to read dataset stored in Google Cloud Storage"
+        gcs_filesystem = gcsfs.GCSFileSystem()
+        return (
+            gcs_filesystem.open(src_path)
+            if xr_engine == "h5netcdf"
+            else gcs_filesystem.get_mapper(root=src_path)
         )
     elif protocol == "reference":
         reference_args = {"fo": src_path, "remote_options": {"anon": anon}}
