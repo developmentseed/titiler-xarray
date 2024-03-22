@@ -68,6 +68,7 @@ def get_filesystem(
             else s3fs.S3Map(root=src_path, s3=s3_filesystem)
         )
     elif protocol == "gs":
+        assert gcsfs is not None, "'gcsfs' must be installed to read dataset stored in Google Cloud Storage"
         gcs_filesystem = gcsfs.GCSFileSystem()
         return (
             gcs_filesystem.open(src_path)
