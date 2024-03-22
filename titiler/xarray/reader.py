@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional
 
 import attr
 import fsspec
-import gcsfs
 import numpy
 import s3fs
 import xarray
@@ -19,6 +18,11 @@ from rio_tiler.types import BBox
 
 from titiler.xarray.redis_pool import get_redis
 from titiler.xarray.settings import ApiSettings
+
+try:
+    import gcsfs
+except ImportError:  # pragma: nocover
+    gcsfs = None  # type: ignore
 
 api_settings = ApiSettings()
 cache_client = get_redis()
