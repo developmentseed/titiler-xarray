@@ -18,7 +18,7 @@ source .venv/bin/activate
 uvicorn titiler.xarray.main:app --reload
 ```
 
-To access the docs, visit http://127.0.0.1:8000/docs.
+To access the docs, visit http://127.0.0.1:8000/api.html.
 ![](https://github.com/developmentseed/titiler-xarray/assets/10407788/4368546b-5b60-4cd5-86be-fdd959374b17)
 
 ## Testing
