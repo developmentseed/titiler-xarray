@@ -67,46 +67,70 @@ class LambdaStack(Stack):
             ],
         )
 
-        security_group = ec2.SecurityGroup(
-            self,
-            "ElastiCacheSecurityGroup",
-            vpc=vpc,
-            description="Allow local access to ElastiCache redis",
-            allow_all_outbound=True,
-        )
-        security_group.add_ingress_rule(
-            ec2.Peer.ipv4(vpc.vpc_cidr_block), ec2.Port.tcp(6379)
-        )
+        if settings.enable_cache:
+            security_group = ec2.SecurityGroup(
+                self,
+                "ElastiCacheSecurityGroup",
+                vpc=vpc,
+                description="Allow local access to ElastiCache redis",
+                allow_all_outbound=True,
+            )
+            security_group.add_ingress_rule(
+                ec2.Peer.ipv4(vpc.vpc_cidr_block), ec2.Port.tcp(6379)
+            )
 
-        # Create the redis cluster
-        redis_cluster = elasticache.CfnCacheCluster(
-            self,
-            f"{id}-redis-cluster",
-            engine="redis",
-            cache_node_type="cache.t3.small",
-            num_cache_nodes=1,
-            vpc_security_group_ids=[security_group.security_group_id],
-            cache_subnet_group_name=f"{id}-cache-subnet-group",
-            cluster_name=f"{id}-redis-cluster",
-        )
+            # Create the redis cluster
+            redis_cluster = elasticache.CfnCacheCluster(
+                self,
+                f"{id}-redis-cluster",
+                engine="redis",
+                cache_node_type="cache.t3.small",
+                num_cache_nodes=1,
+                vpc_security_group_ids=[security_group.security_group_id],
+                cache_subnet_group_name=f"{id}-cache-subnet-group",
+                cluster_name=f"{id}-redis-cluster",
+            )
 
-        # Define the subnet group for the ElastiCache cluster
-        subnet_group = elasticache.CfnSubnetGroup(
-            self,
-            f"{id}-cache-subnet-group",
-            description="Subnet group for ElastiCache",
-            subnet_ids=vpc.select_subnets(subnet_type=ec2.SubnetType.PUBLIC).subnet_ids,
-            cache_subnet_group_name=f"{id}-cache-subnet-group",
-        )
+            # Define the subnet group for the ElastiCache cluster
+            subnet_group = elasticache.CfnSubnetGroup(
+                self,
+                f"{id}-cache-subnet-group",
+                description="Subnet group for ElastiCache",
+                subnet_ids=vpc.select_subnets(
+                    subnet_type=ec2.SubnetType.PUBLIC
+                ).subnet_ids,
+                cache_subnet_group_name=f"{id}-cache-subnet-group",
+            )
 
-        # Add dependency - ensure subnet group is created before the cache cluster
-        redis_cluster.add_depends_on(subnet_group)
+            # Add dependency - ensure subnet group is created before the cache cluster
+            redis_cluster.add_depends_on(subnet_group)
 
-        veda_reader_role = iam.Role.from_role_arn(
-            self,
-            "veda-reader-dev-role",
-            role_arn=f"arn:aws:iam::{self.account}:role/veda-data-reader-dev",
-        )
+        if settings.data_access_role_arn is not None:
+            data_access_role = iam.Role.from_role_arn(
+                self,
+                "data-access-role",
+                role_arn=f"arn:aws:iam::{self.account}:role/{settings.data_access_role_arn}",
+            )
+        else:
+            data_access_role = iam.Role(
+                self,
+                "data-access-role",
+                assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
+            )
+
+            data_access_role.add_managed_policy(
+                iam.ManagedPolicy.from_aws_managed_policy_name("AmazonS3ReadOnlyAccess")
+            )
+
+        titiler_env = {
+            **DEFAULT_ENV,
+            **environment,
+        }
+
+        if settings.enable_cache:
+            titiler_env.update(
+                {"TITILER_XARRAY_CACHE_HOST": redis_cluster.attr_redis_endpoint_address}
+            )
 
         lambda_function = aws_lambda.Function(
             self,
@@ -121,16 +145,12 @@ class LambdaStack(Stack):
             memory_size=memory,
             reserved_concurrent_executions=concurrent,
             timeout=Duration.seconds(timeout),
-            environment={
-                **DEFAULT_ENV,
-                **environment,
-                "TITILER_XARRAY_CACHE_HOST": redis_cluster.attr_redis_endpoint_address,
-            },
+            environment=titiler_env,
             log_retention=logs.RetentionDays.ONE_WEEK,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
             allow_public_subnet=True,
-            role=veda_reader_role,
+            role=data_access_role,
         )
 
         # Create an S3 VPC Endpoint
