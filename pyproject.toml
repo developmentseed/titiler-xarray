@@ -25,21 +25,21 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-    "cftime",
-    "h5netcdf",
-    "xarray",
-    "rioxarray",
-    "zarr",
-    "fsspec",
-    "s3fs",
-    "aiohttp",
-    "requests",
+    "cftime==1.6.3",
+    "h5netcdf==1.3.0",
+    "xarray==2024.3.0",
+    "rioxarray==0.15.0",
+    "zarr==2.17.2",
+    "fsspec==2024.3.1",
+    "s3fs==2024.3.1",
+    "aiohttp==3.9.5",
+    "requests==2.31.0",
     "pydantic==2.0.2",
-    "titiler.core>=0.14.1,<0.15",
-    "pydantic-settings~=2.0",
+    "titiler.core==0.14.1",
+    "pydantic-settings==2.0.3",
     "pandas==1.5.3",
-    "fastapi>=0.100.0,<0.107.0",
-    "starlette<0.28",
+    "fastapi==0.106.0",
+    "starlette==0.27.0",
 ]
 
 [project.optional-dependencies]
@@ -62,7 +62,7 @@ server = [
     "uvicorn"
 ]
 cache = [
-    "redis"
+    "redis==5.0.3"
 ]
 [project.urls]
 Homepage = "https://github.com/developmentseed/titiler-xarray"
