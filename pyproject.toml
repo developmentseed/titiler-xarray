@@ -30,7 +30,6 @@ dependencies = [
     "xarray",
     "rioxarray",
     "zarr",
-    "fakeredis",
     "fsspec",
     "s3fs",
     "aiohttp",
@@ -39,7 +38,6 @@ dependencies = [
     "titiler.core>=0.14.1,<0.15",
     "pydantic-settings~=2.0",
     "pandas==1.5.3",
-    "redis",
     "fastapi>=0.100.0,<0.107.0",
     "starlette<0.28",
 ]
@@ -53,7 +51,8 @@ test = [
     "yappi",
 ]
 dev = [
-    "pre-commit"
+    "pre-commit",
+    "fake-redis"
 ]
 debug = [
     "yappi"
@@ -61,7 +60,9 @@ debug = [
 server = [
     "uvicorn"
 ]
-
+cache = [
+    "redis"
+]
 [project.urls]
 Homepage = "https://github.com/developmentseed/titiler-xarray"
 Issues = "https://github.com/developmentseed/titiler-xarray/issues"
