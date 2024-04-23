@@ -49,11 +49,11 @@ test = [
     "pytest-asyncio",
     "httpx",
     "yappi",
-    "fake-redis"
+    "fakeredis"
 ]
 dev = [
     "pre-commit",
-    "fake-redis"
+    "fakeredis"
 ]
 debug = [
     "yappi"
