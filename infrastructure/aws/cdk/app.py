@@ -142,7 +142,6 @@ class LambdaStack(Stack):
                 path=os.path.abspath(context_dir),
                 file=f"infrastructure/aws/lambda/{dockerfile_name}",
                 platform="linux/amd64",
-                build_args={"ENABLE_CACHE": settings.enable_cache},
             ),
             handler="handler.handler",
             memory_size=memory,
