@@ -105,11 +105,11 @@ class LambdaStack(Stack):
             # Add dependency - ensure subnet group is created before the cache cluster
             redis_cluster.add_depends_on(subnet_group)
 
-        if settings.data_access_role_arn is not None:
+        if settings.data_access_role_name is not None:
             data_access_role = iam.Role.from_role_arn(
                 self,
                 "data-access-role",
-                role_arn=f"arn:aws:iam::{self.account}:role/{settings.data_access_role_arn}",
+                role_arn=f"arn:aws:iam::{self.account}:role/{settings.data_access_role_name}",
             )
         else:
             data_access_role = iam.Role(
