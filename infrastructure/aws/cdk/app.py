@@ -132,14 +132,17 @@ class LambdaStack(Stack):
                 {"TITILER_XARRAY_CACHE_HOST": redis_cluster.attr_redis_endpoint_address}
             )
 
+        dockerfile_name = "Dockerfile.redis" if settings.enable_cache else "Dockerfile"
+
         lambda_function = aws_lambda.Function(
             self,
             f"{id}-lambda",
             runtime=runtime,
             code=aws_lambda.Code.from_docker_build(
                 path=os.path.abspath(context_dir),
-                file="infrastructure/aws/lambda/Dockerfile",
+                file=f"infrastructure/aws/lambda/{dockerfile_name}",
                 platform="linux/amd64",
+                build_args={"ENABLE_CACHE": settings.enable_cache},
             ),
             handler="handler.handler",
             memory_size=memory,
