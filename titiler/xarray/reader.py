@@ -3,7 +3,7 @@
 import contextlib
 import pickle
 import re
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import attr
 import fsspec
@@ -16,14 +16,8 @@ from rio_tiler.constants import WEB_MERCATOR_TMS, WGS84_CRS
 from rio_tiler.io.xarray import XarrayReader
 from rio_tiler.types import BBox
 
+from titiler.xarray.redis_pool import get_redis
 from titiler.xarray.settings import ApiSettings
-
-get_redis: Optional[Callable[[], Any]]
-try:
-    from titiler.xarray.redis_pool import get_redis
-except ImportError:
-    get_redis = None
-
 
 api_settings = ApiSettings()
 
@@ -95,11 +89,6 @@ def xarray_open_dataset(
     """Open dataset."""
     # Generate cache key and attempt to fetch the dataset from cache
     if api_settings.enable_cache:
-
-        assert (
-            get_redis is not None
-        ), "`redis` must be installed to enable caching. Please install titiler-xarray with the `cache` optional dependencies that include `redis`."
-
         cache_client = get_redis()
         cache_key = f"{src_path}_{group}" if group is not None else src_path
         data_bytes = cache_client.get(cache_key)
