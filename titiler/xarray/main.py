@@ -1,6 +1,7 @@
 """titiler app."""
 
 import logging
+from typing import Any, Callable, Optional
 
 import rioxarray
 import zarr
@@ -20,6 +21,14 @@ from titiler.xarray import __version__ as titiler_version
 from titiler.xarray.factory import ZarrTilerFactory
 from titiler.xarray.middleware import ServerTimingMiddleware
 from titiler.xarray.settings import ApiSettings
+
+get_redis: Optional[Callable[[], Any]]
+
+try:
+    from titiler.xarray.redis_pool import get_redis
+except ImportError:
+    get_redis = None
+
 
 logging.getLogger("botocore.credentials").disabled = True
 logging.getLogger("botocore.utils").disabled = True
@@ -97,7 +106,10 @@ def ping():
 
 
 if api_settings.enable_cache:
-    from titiler.xarray.redis_pool import get_redis
+
+    assert (
+        get_redis is not None
+    ), "`redis` must be installed to enable caching. Please install titiler-xarray with the `cache` optional dependencies that include `redis`."
 
     @app.get("/clear_cache")
     def clear_cache(cache_client=Depends(get_redis)):
