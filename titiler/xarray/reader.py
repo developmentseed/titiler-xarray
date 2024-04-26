@@ -20,7 +20,6 @@ from titiler.xarray.redis_pool import get_redis
 from titiler.xarray.settings import ApiSettings
 
 api_settings = ApiSettings()
-cache_client = get_redis()
 
 
 def parse_protocol(src_path: str, reference: Optional[bool] = False):
@@ -90,6 +89,7 @@ def xarray_open_dataset(
     """Open dataset."""
     # Generate cache key and attempt to fetch the dataset from cache
     if api_settings.enable_cache:
+        cache_client = get_redis()
         cache_key = f"{src_path}_{group}" if group is not None else src_path
         data_bytes = cache_client.get(cache_key)
         if data_bytes:

@@ -29,6 +29,10 @@ class StackSettings(pydantic.BaseSettings):
     timeout: int = 30
     memory: int = 3009
 
+    enable_cache: bool = True
+
+    data_access_role_name: Optional[str] = "veda-data-reader-dev"
+
     # The maximum of concurrent executions you want to reserve for the function.
     # Default: - No specific limit - account limit.
     max_concurrent: Optional[int]
