@@ -28,7 +28,7 @@ Tests use data generated locally by using `tests/fixtures/generate_test_*.py` sc
 To run all the tests:
 
 ```bash
-python -m pip install -e ".[tests]"
+python -m pip install -e ".[test]"
 python -m pytest --cov titiler.xarray --cov-report term-missing -s -vv
 ```
 

@@ -27,6 +27,7 @@ dynamic = ["version"]
 dependencies = [
     "cftime",
     "h5netcdf",
+    "numpy<2.0.0",
     "xarray",
     "rioxarray",
     "zarr",
