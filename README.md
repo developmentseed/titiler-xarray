@@ -12,9 +12,9 @@
 # It's recommanded to use virtual environment
 python -m pip install --upgrade virtualenv
 virtualenv .venv
+source .venv/bin/activate
 
 python -m pip install -e . uvicorn
-source .venv/bin/activate
 uvicorn titiler.xarray.main:app --reload
 ```
 
