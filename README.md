@@ -15,6 +15,7 @@ virtualenv .venv
 source .venv/bin/activate
 
 python -m pip install -e . uvicorn
+export TEST_ENVIRONMENT=true  # set this when running locally to mock redis
 uvicorn titiler.xarray.main:app --reload
 ```
 
