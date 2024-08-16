@@ -9,12 +9,12 @@
 ## Running Locally
 
 ```bash
-# It's recommanded to use virtual environment
-python -m pip install --upgrade virtualenv
-virtualenv .venv
+# It's recommended to install dependencies in a virtual environment
+python -m venv .venv
+source .venv/bin/activate
 
 python -m pip install -e . uvicorn
-source .venv/bin/activate
+export TEST_ENVIRONMENT=true  # set this when running locally to mock redis
 uvicorn titiler.xarray.main:app --reload
 ```
 
