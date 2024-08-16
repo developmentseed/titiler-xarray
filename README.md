@@ -10,8 +10,7 @@
 
 ```bash
 # It's recommended to install dependencies in a virtual environment
-python -m pip install --upgrade virtualenv
-virtualenv .venv
+python -m venv .venv
 source .venv/bin/activate
 
 python -m pip install -e . uvicorn
