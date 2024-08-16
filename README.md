@@ -9,7 +9,7 @@
 ## Running Locally
 
 ```bash
-# It's recommanded to use virtual environment
+# It's recommended to install dependencies in a virtual environment
 python -m pip install --upgrade virtualenv
 virtualenv .venv
 source .venv/bin/activate
