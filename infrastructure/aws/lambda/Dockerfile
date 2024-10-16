@@ -4,6 +4,9 @@ FROM --platform=linux/amd64 public.ecr.aws/lambda/python:${PYTHON_VERSION}
 
 WORKDIR /tmp
 
+# Install system dependencies to compile (numexpr)
+RUN yum install -y gcc-c++
+
 COPY pyproject.toml pyproject.toml
 COPY LICENSE LICENSE
 COPY README.md README.md
@@ -26,6 +29,9 @@ RUN find /asset -type d -a -name 'tests' -print0 | xargs -0 rm -rf
 RUN rm -rdf /asset/numpy/doc/ /asset/bin /asset/geos_license /asset/Misc
 RUN rm -rdf /asset/boto3*
 RUN rm -rdf /asset/botocore*
+
+# Remove system dependencies
+RUN yum remove -y gcc-c++
 
 COPY infrastructure/aws/lambda/handler.py /asset/handler.py
 
