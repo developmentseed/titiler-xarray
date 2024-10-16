@@ -1,7 +1,7 @@
 """TiTiler.xarray factory."""
 
 from dataclasses import dataclass
-from typing import Dict, List, Literal, Optional, Type
+from typing import Dict, List, Literal, Optional, Type, Union
 from urllib.parse import urlencode
 
 import jinja2
@@ -21,6 +21,22 @@ from titiler.core.resources.enums import ImageType
 from titiler.core.resources.responses import JSONResponse
 from titiler.core.utils import render_image
 from titiler.xarray.reader import ZarrReader
+
+
+def nodata_dependency(
+    nodata: Annotated[
+        Optional[Union[str, int, float]],
+        Query(
+            title="Nodata value",
+            description="Overwrite internal Nodata value",
+        ),
+    ] = None,
+) -> Optional[float]:
+    """Nodata dependency."""
+    if nodata is not None:
+        nodata = np.nan if nodata == "nan" else float(nodata)
+
+    return None
 
 
 @dataclass
@@ -229,6 +245,7 @@ class ZarrTilerFactory(BaseTilerFactory):
                     description="Whether to expect and open zarr store with consolidated metadata",
                 ),
             ] = True,
+            nodata=Depends(nodata_dependency),
         ) -> Response:
             """Create map tile from a dataset."""
             tms = self.supported_tms.get(tileMatrixSetId)
@@ -243,9 +260,12 @@ class ZarrTilerFactory(BaseTilerFactory):
                 tms=tms,
                 consolidated=consolidated,
             ) as src_dst:
-
                 image = src_dst.tile(
-                    x, y, z, tilesize=scale * 256, nodata=src_dst.input.rio.nodata
+                    x,
+                    y,
+                    z,
+                    tilesize=scale * 256,
+                    nodata=nodata if nodata is not None else src_dst.input.rio.nodata,
                 )
 
             if post_process:
@@ -348,6 +368,7 @@ class ZarrTilerFactory(BaseTilerFactory):
                     description="Whether to expect and open zarr store with consolidated metadata",
                 ),
             ] = True,
+            nodata=Depends(nodata_dependency),
         ) -> Dict:
             """Return TileJSON document for a dataset."""
             route_params = {
@@ -518,6 +539,7 @@ class ZarrTilerFactory(BaseTilerFactory):
             color_formula=Depends(ColorFormulaParams),
             colormap=Depends(self.colormap_dependency),
             render_params=Depends(self.render_dependency),
+            nodata=Depends(nodata_dependency),
         ):
             """Return map Viewer."""
             templates = Jinja2Templates(
