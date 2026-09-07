@@ -131,6 +131,18 @@ def test_opener_icechunk_skips_earthdata_for_undeclared_containers(monkeypatch):
     assert primed == []
 
 
+def test_zarr_opens_unchunked(tmp_path):
+    """With dask installed, open_zarr defaults every variable to
+    dask-backed; opener_zarr must pin chunks=None so plain requests use
+    xarray's lazy arrays and never pay per-request graph overhead."""
+    path = str(tmp_path / "store.zarr")
+    xr.Dataset({"data": (("y", "x"), np.zeros((4, 4)))}).to_zarr(
+        path, consolidated=False
+    )
+    with reader.guess_opener(path) as ds:
+        assert ds["data"].chunks is None
+
+
 class TestApplyWhere:
     """Behavior of the `where` masking at the reader level."""
 

@@ -19,6 +19,7 @@ import attr
 import icechunk
 import obstore
 import xarray as xr
+import zarr
 from boto3.session import Session
 from obstore.auth.boto3 import Boto3CredentialProvider
 from titiler.core.errors import BadRequestError
@@ -124,6 +125,33 @@ def opener_icechunk(
     return dataset
 
 
+def opener_zarr(
+    src_path: str,
+    group: Optional[str] = None,
+    decode_times: bool = True,
+    **kwargs: Any,
+) -> xr.Dataset:
+    """Open a Zarr store with xarray's lazy (unchunked) arrays.
+
+    Mirrors titiler.xarray's fs_open_dataset zarr branch but pins
+    chunks=None: with dask installed, open_zarr otherwise defaults to
+    dask-backed variables, taxing every request with graph overhead
+    (~+10 ms warm tile measured) when only `where=` needs a chunk
+    manager — and _apply_where chunks its own variables.
+    """
+    store = zarr.storage.FsspecStore.from_url(
+        src_path, storage_options={"asynchronous": True, **kwargs}
+    )
+    xr_open_args: Dict[str, Any] = {
+        "decode_coords": "all",
+        "decode_times": decode_times,
+        "chunks": None,
+    }
+    if group is not None:
+        xr_open_args["group"] = group
+    return xr.open_zarr(store, **xr_open_args)
+
+
 # TODO Is there a better way to check if a url points to a file or a prefix?
 def _is_dir(store, path: str = "") -> bool:
     """Return True if path is a prefix containing any objects (directory-like)."""
@@ -209,7 +237,9 @@ def guess_opener(
             decode_times=decode_times,
             authorize_virtual_chunk_access=authorize_virtual_chunk_access,
         )
-    # For zarr, h5netcdf, or other formats, use the standard xarray opener
+    if storage_format == "zarr":
+        return opener_zarr(src_path, group=group, decode_times=decode_times, **kwargs)
+    # For h5netcdf or other formats, use the standard xarray opener
     return xarray_open_dataset(
         src_path, group=group, decode_times=decode_times, **kwargs
     )
@@ -317,7 +347,8 @@ class XarrayReader(Reader):
                     zip(da.dims, da.encoding.get("chunksizes") or ())
                 )
                 ds[name] = da.chunk(
-                    {d: preferred.get(d, _FALLBACK_CHUNK) for d in da.dims}
+                    {d: preferred.get(d, _FALLBACK_CHUNK) for d in da.dims},
+                    chunked_array_type="dask",
                 )
 
         data = get_variable(ds, self.variable, sel=self.sel)
