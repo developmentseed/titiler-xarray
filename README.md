@@ -20,8 +20,7 @@ uv sync --dev
 uv run uvicorn titiler.multidim.main:app --reload
 ```
 
-To access the docs, visit <http://127.0.0.1:8000/api.html>.
-![](https://github.com/developmentseed/titiler-multidim/assets/10407788/4368546b-5b60-4cd5-86be-fdd959374b17)
+To access the docs, visit <http://127.0.0.1:8000/api.html> or see a live example here: <https://staging.openveda.cloud/api/titiler-multidim/api.html>.
 
 ## Mosaic requests
 
