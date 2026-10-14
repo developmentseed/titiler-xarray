@@ -4,6 +4,13 @@
 
 * nothing
 
+## [0.10.2](https://github.com/developmentseed/titiler-multidim/compare/v0.10.1...v0.10.2) (2026-10-14)
+
+
+### Bug Fixes
+
+* remove titiler-xarray reference from README ([#198](https://github.com/developmentseed/titiler-multidim/issues/198)) ([151e8fe](https://github.com/developmentseed/titiler-multidim/commit/151e8feba0665ce6f9ec70471dd28e9065b800e2))
+
 ## [0.10.1](https://github.com/developmentseed/titiler-multidim/compare/v0.10.0...v0.10.1) (2026-10-08)
 
 
