@@ -1,0 +1,26 @@
+{
+  "source": "NOAA Air Quality Forecast Guidance Viewer ozone ramp (ppb), one color per 10 ppb, sampled by hand from the provider's screenshot for https://github.com/NASA-IMPACT/veda-backend/pull/665",
+  "stops": {
+    "0": "#AFFEB0",
+    "10": "#7EFE7E",
+    "20": "#4BFF4C",
+    "30": "#08F001",
+    "40": "#03C300",
+    "50": "#008700",
+    "60": "#E1E103",
+    "70": "#FEBC2E",
+    "80": "#E17411",
+    "90": "#FE7879",
+    "100": "#BE0001",
+    "110": "#F0B4E7",
+    "120": "#DC8CD3",
+    "130": "#C864BF",
+    "140": "#B43DAB",
+    "150": "#A02497",
+    "160": "#8B1D83",
+    "170": "#781470",
+    "180": "#640D5B",
+    "190": "#500347",
+    "200": "#3C003C"
+  }
+}

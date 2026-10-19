@@ -1,0 +1,12 @@
+{
+  "source": "EPA AQI category breakpoints, 24-hour PM2.5 (ug/m3) mapped to 8-hour ozone (ppb), so each PM2.5 category spans the same naqfc_o3 colors as its ozone category",
+  "ramp": "naqfc_o3",
+  "breakpoints": {
+    "0.0": 0.0,
+    "9.0": 54.0,
+    "35.4": 70.0,
+    "55.4": 85.0,
+    "125.4": 105.0,
+    "225.4": 200.0
+  }
+}
