@@ -1,7 +1,8 @@
 """Custom colormaps, registered alongside rio-tiler's built-ins.
 
 Every ``cmap_data/<name>.json`` file is registered as colormap ``<name>``. Each
-file has a ``source``, optional ``notes`` on its limits, and either:
+file has a ``source``, a ``reference`` URL for it, optional ``notes`` on its
+limits, and either:
 
 - ``stops``: data values mapped to ``#rrggbb`` colors, or
 - ``ramp`` and ``breakpoints``: another file's name, and data values mapped to

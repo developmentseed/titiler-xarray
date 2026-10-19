@@ -2,6 +2,7 @@
 
 import re
 from itertools import pairwise
+from urllib.parse import urlparse
 
 import pytest
 from test_app import store_params
@@ -14,8 +15,9 @@ def test_file_follows_schema(name):
     spec = colormaps.SPECS[name]
 
     assert isinstance(spec["source"], str)
+    assert urlparse(spec["reference"]).scheme == "https"
     assert isinstance(spec.get("notes", ""), str)
-    keys = set(spec) - {"source", "notes"}
+    keys = set(spec) - {"source", "reference", "notes"}
     if "stops" in spec:
         assert keys == {"stops"}
         assert all(re.fullmatch(r"#[0-9A-Fa-f]{6}", c) for c in spec["stops"].values())

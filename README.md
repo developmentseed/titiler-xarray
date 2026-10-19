@@ -79,9 +79,9 @@ TileJSON URLs work in map clients unchanged.
 
 Besides rio-tiler's built-in colormaps, this service registers every
 `src/titiler/multidim/cmap_data/<name>.json` file as colormap `<name>`. Each
-file records its `source`, any `notes` on its limits, and either color `stops`
-at data values or `breakpoints` onto another file's stops; `colormaps.py`
-interpolates it into a 256-row table. titiler applies that table **after**
+file records its `source`, a `reference` URL, any `notes` on its limits, and
+either color `stops` at data values or `breakpoints` onto another file's stops;
+`colormaps.py` interpolates it into a 256-row table. titiler applies that table **after**
 `rescale` stretches the data to 0-255, so each colormap is only meaningful with
 the `rescale` listed below.
 
