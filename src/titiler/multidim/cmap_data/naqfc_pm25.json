@@ -1,6 +1,6 @@
 {
   "source": "EPA AQI category breakpoints, 24-hour PM2.5 (ug/m3) mapped to 8-hour ozone (ppb), so each PM2.5 category spans the same naqfc_o3 colors as its ozone category",
-  "reference": "https://document.airnow.gov/technical-assistance-document-for-the-reporting-of-daily-air-quailty.pdf",
+  "reference": "https://aqs.epa.gov/aqsweb/documents/codetables/aqi_breakpoints.html",
   "notes": "Borrows the naqfc_o3 stops, so it shares their limits: see that file's notes.",
   "ramp": "naqfc_o3",
   "breakpoints": {
