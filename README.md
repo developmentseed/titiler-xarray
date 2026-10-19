@@ -79,28 +79,22 @@ TileJSON URLs work in map clients unchanged.
 
 Besides rio-tiler's built-in colormaps, this service registers every
 `src/titiler/multidim/cmap_data/<name>.json` file as colormap `<name>`. Each
-file lists color stops at data values (or, for `naqfc_pm25`, breakpoints onto
-another file's stops), and `colormaps.py` interpolates it into a 256-row table
-that titiler applies **after** `rescale` stretches the data to 0-255, so each
-one is only meaningful with the `rescale` listed below.
+file records its `source`, any `notes` on its limits, and either color `stops`
+at data values or `breakpoints` onto another file's stops; `colormaps.py`
+interpolates it into a 256-row table. titiler applies that table **after**
+`rescale` stretches the data to 0-255, so each colormap is only meaningful with
+the `rescale` listed below.
 
-| `colormap_name` | Source | Use with |
+| `colormap_name` | What it is | Use with |
 |---|---|---|
-| `worldview_rainbow_4` | NASA Worldview custom palette "Rainbow 4", copied verbatim (255 colors) from [nasa-gibs/worldview](https://github.com/nasa-gibs/worldview/blob/7d16ee53eb38a90fe66c9860015b51094c96ed25/config/default/common/config/palettes-custom.json/rainbow_4.json) (converted to one `#rrggbb` stop per row, top color repeated for row 255) | the value range you would set in Worldview, e.g. `rescale=0,2e16` for TEMPO NO2 tropospheric column in molecules/cm² |
-| `naqfc_o3` | NOAA Air Quality Forecast Guidance Viewer ozone ramp, one color per 10 ppb, sampled from the viewer for [veda-backend#665](https://github.com/NASA-IMPACT/veda-backend/pull/665) | `rescale=0,200` for data in ppb, `rescale=0,0.2` for ppm |
-| `naqfc_pm25` | the ozone ramp above, stretched so each EPA 24-hour PM2.5 AQI category (bounds 9.0, 35.4, 55.4, 125.4, 225.4 µg/m³) spans the same colors as its 8-hour ozone category (54, 70, 85, 105, 200 ppb) | `rescale=0,225.4` for data in µg/m³ |
+| [`worldview_rainbow_4`](src/titiler/multidim/cmap_data/worldview_rainbow_4.json) | NASA Worldview's "Rainbow 4" palette | the value range you would set in Worldview, e.g. `rescale=0,2e16` for TEMPO NO2 tropospheric column in molecules/cm² |
+| [`naqfc_o3`](src/titiler/multidim/cmap_data/naqfc_o3.json) | NOAA Air Quality Forecast Guidance Viewer ozone ramp | `rescale=0,200` for data in ppb, `rescale=0,0.2` for ppm |
+| [`naqfc_pm25`](src/titiler/multidim/cmap_data/naqfc_pm25.json) | the ozone ramp, stretched so each EPA PM2.5 AQI category gets its ozone category's colors | `rescale=0,225.4` for data in µg/m³ |
 
-Known limits:
-
-- The NAQFC ramps are sampled from a screenshot, not from a provider color table. The
-  provider's stated intent (Air-Quality-Portal/aq-arch#192) is category boundaries at
-  the EPA breakpoints with a gradient inside each category; the ozone ramp as sampled
-  does not change color exactly at those breakpoints. Replace the stops in
-  `cmap_data/naqfc_o3.json` when the provider supplies the table.
-- A lookup table places category boundaries to the nearest 1/255 of the `rescale`
-  range: 0.8 ppb for ozone, 0.9 µg/m³ for PM2.5.
-- Values above the `rescale` maximum take the top color; values below the minimum take
-  the bottom color.
+Every custom colormap places category boundaries to the nearest 1/255 of the
+`rescale` range (0.8 ppb for ozone, 0.9 µg/m³ for PM2.5), and gives values
+above the `rescale` maximum the top color and values below the minimum the
+bottom color.
 
 ```bash
 curl -G "$API_URL/tiles/WebMercatorQuad/4/3/6.png" \

@@ -14,11 +14,13 @@ def test_file_follows_schema(name):
     spec = colormaps.SPECS[name]
 
     assert isinstance(spec["source"], str)
+    assert isinstance(spec.get("notes", ""), str)
+    keys = set(spec) - {"source", "notes"}
     if "stops" in spec:
-        assert set(spec) == {"source", "stops"}
+        assert keys == {"stops"}
         assert all(re.fullmatch(r"#[0-9A-Fa-f]{6}", c) for c in spec["stops"].values())
     else:
-        assert set(spec) == {"source", "ramp", "breakpoints"}
+        assert keys == {"ramp", "breakpoints"}
         assert "stops" in colormaps.SPECS[spec["ramp"]]
 
 
