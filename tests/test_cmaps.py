@@ -1,53 +1,54 @@
-"""Custom colormaps: committed files match the generator and the API serves them."""
+"""Custom colormaps: the tables keep their stated properties and the API serves them."""
 
-import importlib.util
-import pathlib
+import json
+from importlib.resources import files
+from itertools import pairwise
 
-import numpy as np
 import pytest
 from test_app import store_params
 
-REPO = pathlib.Path(__file__).resolve().parents[1]
-CMAP_DIR = REPO / "src" / "titiler" / "multidim" / "cmap_data"
-
-_spec = importlib.util.spec_from_file_location(
-    "make_cmaps", REPO / "scripts" / "make_cmaps.py"
-)
-make_cmaps = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(make_cmaps)
-
-
-@pytest.mark.parametrize("name", list(make_cmaps.CMAPS))
-def test_committed_file_matches_generator(name):
-    committed = np.load(CMAP_DIR / f"{name}.npy")
-    assert committed.shape == (256, 4) and committed.dtype == np.uint8
-    np.testing.assert_array_equal(committed, make_cmaps.CMAPS[name]())
+from titiler.multidim import colormaps
 
 
 def test_rainbow_4_is_verbatim_worldview():
-    lut = np.load(CMAP_DIR / "worldview_rainbow_4.npy")
-    assert lut[0].tolist() == [0x3B, 0x76, 0xC6, 255]  # first Worldview color
-    assert (
-        lut[254].tolist() == lut[255].tolist() == [0x07, 0x04, 0x0D, 255]
-    )  # last, repeated
+    source = json.loads((files("titiler.multidim") / "rainbow_4.json").read_text())
+    colors = [tuple(bytes.fromhex(c)) for c in source["rainbow_4"]["colors"]]
+    rainbow = colormaps.cmap.get("worldview_rainbow_4")
+
+    # After rescale, pixel values run from 0 to 255, and rio-tiler leaves any
+    # value without a row transparent, so the colormap needs all 256 rows.
+    assert len(rainbow) == 256
+    # Every Worldview color in order, then the top one again to fill row 255.
+    assert list(rainbow.values()) == [*colors, colors[-1]]
 
 
-def test_pm25_is_the_ozone_ramp_stretched_over_aqi_categories():
-    o3 = np.load(CMAP_DIR / "naqfc_o3.npy")
-    pm25 = np.load(CMAP_DIR / "naqfc_pm25.npy")
-    assert pm25[0].tolist() == o3[0].tolist()  # 0 ug/m3 and 0 ppb share a color
-    assert pm25[255].tolist() == o3[255].tolist()  # 225.4 ug/m3 and 200 ppb too
-    # "Good" PM2.5 ends at 9 ug/m3 (index 10); "Good" ozone ends at 54 ppb (index 69).
-    # Both are still green, and PM2.5 reaches it far earlier in the table.
-    assert pm25[10][1] > pm25[10][0] and o3[69][1] > o3[69][0]
-    assert not np.array_equal(pm25, o3)
+@pytest.mark.parametrize(
+    "points",
+    [
+        list(colormaps.O3_RAMP_PPB),
+        list(colormaps.PM25_UGM3_TO_O3_PPB),
+        list(colormaps.PM25_UGM3_TO_O3_PPB.values()),
+    ],
+    ids=["ozone ramp", "PM2.5 breakpoints", "ozone breakpoints"],
+)
+def test_interpolation_points_increase(points):
+    # np.interp does not check that the points it interpolates between increase,
+    # so an out-of-order entry silently scrambles a colormap rather than failing.
+    out_of_order = [
+        f"{a} is not less than the next point, {b}"
+        for a, b in pairwise(points)
+        if a >= b
+    ]
+
+    assert out_of_order == []
 
 
-def test_api_lists_and_serves_custom_colormaps(app):
+@pytest.mark.parametrize("name", ["worldview_rainbow_4", "naqfc_o3", "naqfc_pm25"])
+def test_api_lists_and_serves_custom_colormap(app, name):
     listed = {c["id"] for c in app.get("/colorMaps").json()["colormaps"]}
-    for name in make_cmaps.CMAPS:
-        assert name in listed
-        assert app.get(f"/colorMaps/{name}").status_code == 200
+
+    assert name in listed
+    assert app.get(f"/colorMaps/{name}").status_code == 200
 
 
 def test_tile_renders_with_custom_colormap(app):
@@ -57,5 +58,6 @@ def test_tile_renders_with_custom_colormap(app):
         "colormap_name": "naqfc_o3",
     }
     response = app.get("/tiles/WebMercatorQuad/0/0/0.png", params=params)
+
     assert response.status_code == 200
     assert response.headers["content-type"] == "image/png"

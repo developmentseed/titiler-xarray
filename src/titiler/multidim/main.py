@@ -2,7 +2,6 @@
 
 import logging
 import os
-from pathlib import Path
 from typing import Annotated, Literal
 
 import icechunk
@@ -14,7 +13,6 @@ from earthaccess_auth.exceptions import (
     S3CredentialsRequestFailure,
 )
 from fastapi import FastAPI, Query
-from rio_tiler.colormap import cmap as default_cmap
 from starlette import status
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
@@ -35,6 +33,7 @@ from titiler.mosaic.errors import MOSAIC_STATUS_CODES
 from titiler.xarray.extensions import DatasetMetadataExtension, ValidateExtension
 
 from titiler.multidim import __version__ as titiler_version
+from titiler.multidim.colormaps import cmap
 from titiler.multidim.extensions import open_metadata_dataset
 from titiler.multidim.factory import XarrayMosaicTilerFactory
 from titiler.multidim.reader import WhereConditionError
@@ -83,10 +82,7 @@ TITILER_CONFORMS_TO = {
 }
 
 ###############################################################################
-# Custom colormaps, registered by file name (see cmap_data/README.md)
-cmap = default_cmap.register(
-    {f.stem: str(f) for f in (Path(__file__).parent / "cmap_data").glob("*.npy")}
-)
+# Custom colormaps (see colormaps.py)
 ColorMapParams = create_colormap_dependency(cmap)
 
 ###############################################################################
