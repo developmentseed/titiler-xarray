@@ -146,6 +146,9 @@ explicit_package_bases = true
 [tool.uv]
 exclude-newer = "1 week"
 
+exclude-newer-package = { numcodecs = false, certifi = false }
+
+
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
