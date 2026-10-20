@@ -10,10 +10,8 @@ from test_app import store_params
 from titiler.multidim import colormaps
 
 
-@pytest.mark.parametrize("name", list(colormaps.SPECS))
-def test_file_follows_schema(name):
-    spec = colormaps.SPECS[name]
-
+@pytest.mark.parametrize("spec", colormaps.SPECS.values(), ids=colormaps.SPECS.keys())
+def test_file_follows_schema(spec):
     assert isinstance(spec["source"], str)
     assert urlparse(spec["reference"]).scheme == "https"
     assert isinstance(spec.get("notes", ""), str)
@@ -32,6 +30,8 @@ def test_rainbow_4_is_verbatim_worldview():
 
     # After rescale, pixel values run from 0 to 255, and rio-tiler leaves any
     # value without a row transparent, so the colormap needs all 256 rows.
+    # A 256-row table, not the list of value ranges rio-tiler also accepts.
+    assert isinstance(rainbow, dict)
     assert len(rainbow) == 256
     # One stop per row, so every row is a stop's color, unblended.
     assert list(rainbow.values()) == [
@@ -53,7 +53,7 @@ def _interpolation_points():
             )
 
 
-@pytest.mark.parametrize("points", _interpolation_points())
+@pytest.mark.parametrize("points", list(_interpolation_points()))
 def test_interpolation_points_increase(points):
     # np.interp does not check that the points it interpolates between increase,
     # so an out-of-order entry silently scrambles a colormap rather than failing.
