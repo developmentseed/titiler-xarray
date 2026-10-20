@@ -4,6 +4,13 @@
 
 * nothing
 
+## [0.11.0](https://github.com/developmentseed/titiler-multidim/compare/v0.10.2...v0.11.0) (2026-10-20)
+
+
+### Features
+
+* add Worldview Rainbow 4 and NAQFC colormaps ([#200](https://github.com/developmentseed/titiler-multidim/issues/200)) ([304ec66](https://github.com/developmentseed/titiler-multidim/commit/304ec661501c661d2fe4ff69ccf8fc1da8fa4e07))
+
 ## [0.10.2](https://github.com/developmentseed/titiler-multidim/compare/v0.10.1...v0.10.2) (2026-10-14)
 
 
