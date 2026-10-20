@@ -18,6 +18,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.templating import Jinja2Templates
+from titiler.core.dependencies import create_colormap_dependency
 from titiler.core.errors import DEFAULT_STATUS_CODES, add_exception_handlers
 from titiler.core.factory import AlgorithmFactory, ColorMapFactory, TMSFactory
 from titiler.core.middleware import (
@@ -32,6 +33,7 @@ from titiler.mosaic.errors import MOSAIC_STATUS_CODES
 from titiler.xarray.extensions import DatasetMetadataExtension, ValidateExtension
 
 from titiler.multidim import __version__ as titiler_version
+from titiler.multidim.colormaps import cmap
 from titiler.multidim.extensions import open_metadata_dataset
 from titiler.multidim.factory import XarrayMosaicTilerFactory
 from titiler.multidim.reader import WhereConditionError
@@ -80,8 +82,13 @@ TITILER_CONFORMS_TO = {
 }
 
 ###############################################################################
+# Custom colormaps (see colormaps.py)
+ColorMapParams = create_colormap_dependency(cmap)
+
+###############################################################################
 # Tiles endpoints
 xarray_factory = XarrayMosaicTilerFactory(
+    colormap_dependency=ColorMapParams,
     enable_telemetry=api_settings.telemetry_enabled,
     extensions=[
         DatasetMetadataExtension(dataset_opener=open_metadata_dataset),
@@ -106,7 +113,7 @@ TITILER_CONFORMS_TO.update(algorithms.conforms_to)
 
 ###############################################################################
 # Colormaps endpoints
-cmaps = ColorMapFactory(templates=templates)
+cmaps = ColorMapFactory(supported_colormaps=cmap, templates=templates)
 app.include_router(
     cmaps.router,
     tags=["ColorMaps"],

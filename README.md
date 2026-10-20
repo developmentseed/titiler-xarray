@@ -75,6 +75,33 @@ curl -G "$API_URL/tiles/WebMercatorQuad/4/3/6.png" \
 `tilejson.json` forwards `where` into its tile template, so filtered
 TileJSON URLs work in map clients unchanged.
 
+## Custom colormaps
+
+Besides rio-tiler's built-in colormaps, this service registers every
+`src/titiler/multidim/cmap_data/<name>.json` file as colormap `<name>`. Each
+file records its `source`, a `reference` URL, any `notes` on its limits, and
+either color `stops` at data values or `breakpoints` onto another file's stops;
+`colormaps.py` interpolates it into a 256-row table. titiler applies that table **after**
+`rescale` stretches the data to 0-255, so each colormap is only meaningful with
+the `rescale` listed below.
+
+| `colormap_name` | What it is | Use with |
+|---|---|---|
+| [`worldview_rainbow_4`](src/titiler/multidim/cmap_data/worldview_rainbow_4.json) | NASA Worldview's "Rainbow 4" palette | the value range you would set in Worldview, e.g. `rescale=0,2e16` for TEMPO NO2 tropospheric column in molecules/cm² |
+| [`naqfc_o3`](src/titiler/multidim/cmap_data/naqfc_o3.json) | NOAA Air Quality Forecast Guidance Viewer ozone ramp | `rescale=0,200` for data in ppb, `rescale=0,0.2` for ppm |
+| [`naqfc_pm25`](src/titiler/multidim/cmap_data/naqfc_pm25.json) | the ozone ramp, stretched so each EPA PM2.5 AQI category gets its ozone category's colors | `rescale=0,225.4` for data in µg/m³ |
+
+Every custom colormap places category boundaries to the nearest 1/255 of the
+`rescale` range (0.8 ppb for ozone, 0.9 µg/m³ for PM2.5), and gives values
+above the `rescale` maximum the top color and values below the minimum the
+bottom color.
+
+```bash
+curl -G "$API_URL/tiles/WebMercatorQuad/4/3/6.png" \
+  --data-urlencode "url=..." --data-urlencode "variable=vertical_column" \
+  --data-urlencode "rescale=0,2e16" --data-urlencode "colormap_name=worldview_rainbow_4"
+```
+
 ## Authorizing icechunk virtual chunk access
 
 Icechunk datasets can reference "virtual chunks" stored outside the repository (for example NetCDF files in another bucket). Access to those locations is denied unless each container URL prefix is explicitly authorized via the `TITILER_MULTIDIM_AUTHORIZED_CHUNK_ACCESS` setting, a JSON object mapping prefixes to access options:

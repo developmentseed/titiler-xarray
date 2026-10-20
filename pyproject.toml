@@ -130,6 +130,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/test_app.py" = ["D1"]
+"tests/test_cmaps.py" = ["D1"]
 "tests/test_chunk_access.py" = ["D1"]
 "tests/test_settings.py" = ["D1"]
 "tests/test_earthdata.py" = ["D1"]
@@ -141,6 +142,9 @@ no_implicit_optional = true
 strict_optional = true
 namespace_packages = true
 explicit_package_bases = true
+
+[tool.uv]
+exclude-newer = "1 week"
 
 [build-system]
 requires = ["pdm-backend"]
