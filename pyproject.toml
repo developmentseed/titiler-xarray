@@ -143,6 +143,9 @@ strict_optional = true
 namespace_packages = true
 explicit_package_bases = true
 
+[tool.uv]
+exclude-newer = "1 week"
+
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
